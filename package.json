@@ -1,0 +1,34 @@
+{
+  "name": "stream-toolkit",
+  "version": "1.0.0",
+  "description": "handy tools for working with streams",
+  "main": "./lib/stream-toolkit.js",
+  "keywords": [
+    "streams"
+  ],
+  "author": "Robey Pointer <robeypointer@gmail.com>",
+  "homepage": "https://github.com/robey/stream-toolkit",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/robey/stream-toolkit.git"
+  },
+  "licenses": [
+    {
+      "type": "Apache License 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+    }
+  ],
+  "scripts": {
+    "test": "./node_modules/plz/bin/plz -v clean test"
+  },
+  "dependencies": {
+    "q": "^1.0.1"
+  },
+  "devDependencies": {
+    "coffee-script": "^1.7",
+    "mocha": "*",
+    "mocha-sprinkles": "*",
+    "plz": "^2.0.3",
+    "should": "*"
+  }
+}
