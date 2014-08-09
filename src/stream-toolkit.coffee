@@ -1,7 +1,7 @@
 buffer_streams = require "./stream-toolkit/buffer_streams"
 compound_stream = require "./stream-toolkit/compound_stream"
 limit_stream = require "./stream-toolkit/limit_stream"
-push_stream = require "./stream-toolkit/push_stream"
+q_stream = require "./stream-toolkit/q_stream"
 
 pad0 = (s, n) ->
   while s.length < n then s = "0" + s
@@ -18,7 +18,7 @@ fromHex = (str) ->
 exports.fromHex = fromHex
 exports.CompoundStream = compound_stream.CompoundStream
 exports.LimitStream = limit_stream.LimitStream
-exports.PushStream = push_stream.PushStream
+exports.QStream = q_stream.QStream
 exports.SinkStream = buffer_streams.SinkStream
 exports.SourceStream = buffer_streams.SourceStream
 exports.toHex = toHex

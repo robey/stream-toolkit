@@ -1,9 +1,11 @@
 Q = require "q"
 stream = require "stream"
 
-# Readable stream that has data "pushed" into it. Each push returns a promise
-# that's fulfilled when the data is received downstream.
-class PushStream extends stream.Readable
+# Readable stream that enqueues data pushed into it. For each write, it
+# returns a promise that will be fulfilled when the buffer is received
+# downsteam. (You can use this to avoid generating more data until all the
+# previous data has been received, effectively nullifying buffering.)
+class QStream extends stream.Readable
   constructor: ->
     super()
     @closed = false
@@ -39,13 +41,14 @@ class PushStream extends stream.Readable
       deferred.resolve()
 
   # pipe this into a writable, and return a promise that will resolve when the pipe is finished.
-  qpipe: (writable) ->
+  pipe: (writable) ->
     deferred = Q.defer()
     writable.once "finish", ->
       deferred.resolve()
     writable.once "error", (err) ->
       deferred.reject(err)
-    @pipe(writable)
+    # no better way to do this? :(
+    QStream.__super__.pipe.apply(@, [ writable ])
     deferred.promise
 
   # splice data from another readable stream into this one. if byteCount is defined, demand exactly that many bytes.
@@ -76,4 +79,4 @@ class PushStream extends stream.Readable
     deferred.promise
 
 
-exports.PushStream = PushStream
+exports.QStream = QStream

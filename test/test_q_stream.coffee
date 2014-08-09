@@ -7,11 +7,11 @@ toolkit = require "../lib/stream-toolkit"
 
 future = mocha_sprinkles.future
 
-describe "PushStream", ->
+describe "QStream", ->
   it "pushes when active", future ->
     sink = new toolkit.SinkStream()
-    ps = new toolkit.PushStream()
-    promise = ps.qpipe(sink)
+    ps = new toolkit.QStream()
+    promise = ps.pipe(sink)
     ps.write(new Buffer([ 0x0f ])).then ->
       ps.write(new Buffer([ 0x0d ]))
     .then ->
@@ -23,11 +23,11 @@ describe "PushStream", ->
 
   it "drains a full stream", future ->
     sink = new toolkit.SinkStream()
-    ps = new toolkit.PushStream()
+    ps = new toolkit.QStream()
     promise1 = ps.write(new Buffer([ 0x41 ]))
     promise2 = ps.write(new Buffer([ 0x42 ]))
     ps.close()
-    promise = ps.qpipe(sink).then ->
+    promise = ps.pipe(sink).then ->
       toolkit.toHex(sink.getBuffer()).should.eql "4142"
 
   it "acks only when data is received", future ->
@@ -35,8 +35,8 @@ describe "PushStream", ->
     slowWriter.buffers = []
     slowWriter._write = (chunk, encoding, callback) ->
       slowWriter.buffers.push { chunk, callback }
-    ps = new toolkit.PushStream()
-    promise = ps.qpipe(slowWriter)
+    ps = new toolkit.QStream()
+    promise = ps.pipe(slowWriter)
     flag = 0
     ps.write(new Buffer([ 0x41, 0x42, 0x43 ])).then ->
       flag.should.eql 1
@@ -50,7 +50,7 @@ describe "PushStream", ->
   it "splices in another stream", future ->
     slowReader = new stream.Readable()
     slowReader._read = (n) ->
-    ps = new toolkit.PushStream()
+    ps = new toolkit.QStream()
     ps.write(new Buffer([ 0x41 ]))
     flag = 0
     x = ps.spliceFrom(slowReader).then ->
@@ -62,6 +62,6 @@ describe "PushStream", ->
       slowReader.push new Buffer([ 0x49 ])
       slowReader.push null
     sink = new toolkit.SinkStream()
-    ps.qpipe(sink).then ->
+    ps.pipe(sink).then ->
       toolkit.toHex(sink.getBuffer()).should.eql "414942"
     x
