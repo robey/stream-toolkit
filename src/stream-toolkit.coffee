@@ -1,4 +1,5 @@
 buffer_streams = require "./stream-toolkit/buffer_streams"
+compound_stream = require "./stream-toolkit/compound_stream"
 limit_stream = require "./stream-toolkit/limit_stream"
 push_stream = require "./stream-toolkit/push_stream"
 
@@ -15,6 +16,7 @@ fromHex = (str) ->
 
 
 exports.fromHex = fromHex
+exports.CompoundStream = compound_stream.CompoundStream
 exports.LimitStream = limit_stream.LimitStream
 exports.PushStream = push_stream.PushStream
 exports.SinkStream = buffer_streams.SinkStream
