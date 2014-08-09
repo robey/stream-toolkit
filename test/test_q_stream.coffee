@@ -10,12 +10,12 @@ future = mocha_sprinkles.future
 describe "QStream", ->
   it "pushes when active", future ->
     sink = new toolkit.SinkStream()
-    ps = new toolkit.QStream()
-    promise = ps.pipe(sink)
-    ps.write(new Buffer([ 0x0f ])).then ->
-      ps.write(new Buffer([ 0x0d ]))
+    qs = new toolkit.QStream()
+    promise = qs.pipe(sink)
+    qs.write(new Buffer([ 0x0f ])).then ->
+      qs.write(new Buffer([ 0x0d ]))
     .then ->
-      ps.close()
+      qs.close()
     .then ->
       promise
     .then ->
@@ -23,11 +23,11 @@ describe "QStream", ->
 
   it "drains a full stream", future ->
     sink = new toolkit.SinkStream()
-    ps = new toolkit.QStream()
-    promise1 = ps.write(new Buffer([ 0x41 ]))
-    promise2 = ps.write(new Buffer([ 0x42 ]))
-    ps.close()
-    promise = ps.pipe(sink).then ->
+    qs = new toolkit.QStream()
+    promise1 = qs.write(new Buffer([ 0x41 ]))
+    promise2 = qs.write(new Buffer([ 0x42 ]))
+    qs.close()
+    promise = qs.pipe(sink).then ->
       toolkit.toHex(sink.getBuffer()).should.eql "4142"
 
   it "acks only when data is received", future ->
@@ -47,7 +47,22 @@ describe "QStream", ->
       slowWriter.buffers[0].chunk.toString("UTF-8").should.eql "ABC"
       slowWriter.buffers[0].callback()
 
-  it "splices in another stream", future ->
+  it "splices in a simple stream", future ->
+    sink = new toolkit.SinkStream()
+    qs = new toolkit.QStream()
+    promise = qs.pipe(sink)
+    qs.write(new Buffer("siber")).then ->
+      qs.spliceFrom(new toolkit.SourceStream("ian khat"))
+    .then ->
+      qs.write(new Buffer("ru"))
+    .then ->
+      qs.close()
+    .then ->
+      promise
+    .then ->
+      sink.getBuffer().toString().should.eql "siberian khatru"
+
+  it "splices in a slow stream", future ->
     slowReader = new stream.Readable()
     slowReader._read = (n) ->
     ps = new toolkit.QStream()

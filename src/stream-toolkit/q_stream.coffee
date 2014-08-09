@@ -1,5 +1,6 @@
 Q = require "q"
 stream = require "stream"
+util = require "util"
 
 # Readable stream that enqueues data pushed into it. For each write, it
 # returns a promise that will be fulfilled when the buffer is received
@@ -39,6 +40,13 @@ class QStream extends stream.Readable
       { buffer, deferred } = @queue.shift()
       @ready = @push buffer
       deferred.resolve()
+    if @ready and @spliced? then @_feedFromSplice()
+
+  _feedFromSplice: ->
+    return if (not @ready) or @closed
+    chunk = @spliced.read()
+    return if not chunk?
+    @write chunk
 
   # pipe this into a writable, and return a promise that will resolve when the pipe is finished.
   pipe: (writable) ->
@@ -51,20 +59,14 @@ class QStream extends stream.Readable
     QStream.__super__.pipe.apply(@, [ writable ])
     deferred.promise
 
-  # splice data from another readable stream into this one. if byteCount is defined, demand exactly that many bytes.
-  spliceFrom: (inStream, byteCount) ->
-    if @spliced? then throw new Error("Already shunting!")
+  # splice another stream into this one.
+  # returns a promise that is fulfilled when the inner stream is finished.
+  # the QStream will remain open for further data until closed explicitly.
+  spliceFrom: (inStream) ->
+    if @spliced? then throw new Error("Already splicing!")
     @spliced = inStream
     deferred = Q.defer()
-    lastPromise = Q()
-    inStream.on "data", (chunk) =>
-      return unless @spliced?
-      buffer = if byteCount? and chunk.length > byteCount then chunk.slice(0, byteCount) else chunk
-      if byteCount? then byteCount -= buffer.length
-      lastPromise = @write(buffer)
-      if byteCount? and byteCount == 0
-        @spliced = null
-        lastPromise.then => deferred.resolve()
+    inStream.on "readable", => @_feedFromSplice()
     inStream.once "error", (err) =>
       return unless @spliced?
       @spliced = null
@@ -72,10 +74,7 @@ class QStream extends stream.Readable
     inStream.once "end", =>
       return unless @spliced?
       @spliced = null
-      if byteCount? and byteCount > 0
-        deferred.reject(new Error("Insufficient data from pipe (needed #{remaining} more)"))
-        return
-      lastPromise.then => deferred.resolve()
+      @write(new Buffer(0)).then -> deferred.resolve()
     deferred.promise
 
 
