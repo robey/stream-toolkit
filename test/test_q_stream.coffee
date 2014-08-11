@@ -103,8 +103,5 @@ describe "QStream", ->
     qs2.write(new Buffer("hello")).then ->
       qs2.close()
     .then ->
-      Q.delay(100).then ->
-        console.log qs.toString()
-        console.log qs2.toString()
       Q.all([ promise1, promise2 ]).then ->
         sink.getBuffer().toString().should.eql "hello"
