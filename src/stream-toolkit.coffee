@@ -16,8 +16,18 @@ fromHex = (str) ->
 
 Q = require "q"
 
+qpipe = (readable, writable) ->
+  deferred = Q.defer()
+  writable.once "finish", ->
+    deferred.resolve()
+  writable.once "error", (err) ->
+    deferred.reject(err)
+  readable.pipe(writable)
+  deferred.promise
+
 # turn a stream.read(N) into a function that returns a promise.
 qread = (stream, count) ->
+  if count == 0 then return Q(new Buffer(0))
   rv = stream.read(count)
   if rv? then return Q(rv)
   deferred = Q.defer()
@@ -32,6 +42,7 @@ qread = (stream, count) ->
 
 
 exports.fromHex = fromHex
+exports.qpipe = qpipe
 exports.qread = qread
 exports.CompoundStream = compound_stream.CompoundStream
 exports.LimitStream = limit_stream.LimitStream
