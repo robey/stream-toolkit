@@ -14,8 +14,25 @@ toHex = (buffer) ->
 fromHex = (str) ->
   new Buffer([0 ... str.length / 2].map (i) -> parseInt(str[i * 2 ... (i + 1) * 2], 16))
 
+Q = require "q"
+
+# turn a stream.read(N) into a function that returns a promise.
+readEventually = (stream, count) ->
+  rv = stream.read(count)
+  if rv? then return Q(rv)
+  deferred = Q.defer()
+  stream.once "readable", ->
+    readEventually(stream, count).then (rv) ->
+      deferred.resolve(rv)
+  stream.once "error", (err) ->
+    deferred.reject(err)
+  stream.once "end", ->
+    deferred.reject(new Error("Stream ended"))
+  deferred.promise
+
 
 exports.fromHex = fromHex
+exports.readEventually = readEventually
 exports.CompoundStream = compound_stream.CompoundStream
 exports.LimitStream = limit_stream.LimitStream
 exports.QStream = q_stream.QStream
