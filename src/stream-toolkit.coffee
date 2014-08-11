@@ -17,12 +17,12 @@ fromHex = (str) ->
 Q = require "q"
 
 # turn a stream.read(N) into a function that returns a promise.
-readEventually = (stream, count) ->
+qread = (stream, count) ->
   rv = stream.read(count)
   if rv? then return Q(rv)
   deferred = Q.defer()
   stream.once "readable", ->
-    readEventually(stream, count).then (rv) ->
+    qread(stream, count).then (rv) ->
       deferred.resolve(rv)
   stream.once "error", (err) ->
     deferred.reject(err)
@@ -32,7 +32,7 @@ readEventually = (stream, count) ->
 
 
 exports.fromHex = fromHex
-exports.readEventually = readEventually
+exports.qread = qread
 exports.CompoundStream = compound_stream.CompoundStream
 exports.LimitStream = limit_stream.LimitStream
 exports.QStream = q_stream.QStream

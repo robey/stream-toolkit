@@ -7,16 +7,16 @@ toolkit = require "../lib/stream-toolkit"
 
 future = mocha_sprinkles.future
 
-describe "readEventually", ->
+describe "qread", ->
   it "works on a pre-filled stream", future ->
     source = new toolkit.SourceStream("hello")
-    toolkit.readEventually(source, 5).then (buffer) ->
+    toolkit.qread(source, 5).then (buffer) ->
       buffer.toString().should.eql "hello"
 
   it "works on a delayed stream", future ->
     s = new stream.Readable()
     s._read = ->
-    promise = toolkit.readEventually(s, 5)
+    promise = toolkit.qread(s, 5)
     Q.delay(50).then ->
       s.push "hi"
       Q.delay(50)
@@ -29,7 +29,7 @@ describe "readEventually", ->
   it "handles a close event", future ->
     s = new stream.Readable()
     s._read = ->
-    promise = toolkit.readEventually(s, 5)
+    promise = toolkit.qread(s, 5)
     Q.delay(50).then ->
       s.push "hi"
       s.push null
