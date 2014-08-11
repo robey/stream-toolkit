@@ -99,10 +99,8 @@ describe "QStream", ->
     promise1 = qs.pipe(sink)
     qs2 = new toolkit.QStream()
     promise2 = qs.spliceFrom(new toolkit.LimitStream(qs2, 5)).then ->
-      console.log "qs close"
       qs.close()
     qs2.write(new Buffer("hello")).then ->
-      console.log "hello"
       qs2.close()
     .then ->
       Q.delay(100).then ->
