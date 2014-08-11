@@ -75,3 +75,13 @@ describe "LimitStream", ->
       sink.getBuffer().toString().should.eql "llo s"
       s1.read(10).toString().should.eql "ail"
       done()
+
+  it "handles the stupid 0-length case", (done) ->
+    sink = new toolkit.SinkStream()
+    source = new toolkit.SourceStream("hello sailor!")
+    s = new toolkit.LimitStream(source, 0)
+    s.pipe(sink)
+    sink.on "finish", ->
+      sink.getBuffer().toString().should.eql ""
+      s.isFinished().should.eql true
+      done()
