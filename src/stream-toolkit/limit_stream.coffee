@@ -13,7 +13,11 @@ class LimitStream extends stream.Readable
     @stream.on "error", (err) => @emit "error", err
 
   _readable: ->
-    return if (not @ready) or @size == 0
+    return if not @ready
+    if @size == 0
+      @queue.push null
+      @_drain()
+      return
     chunk = @stream.read()
     return if not chunk?
     overage = null
