@@ -3,9 +3,9 @@ stream = require "stream"
 util = require "util"
 
 # Readable stream composed from a series of smaller streams.
-# Generator is a function that returns each new stream in sequence. When it
-# returns null, the compound stream ends too. (Generator may also be an
-# array, if you have a set of streams already.)
+# Generator is a function that returns each new stream in sequence, either
+# directly or as a promise. When it returns null, the compound stream ends
+# too. (Generator may also be an array, if you have a set of streams already.)
 class CompoundStream extends stream.Readable
   constructor: (@generator) ->
     super()
@@ -16,18 +16,18 @@ class CompoundStream extends stream.Readable
     @_next()
 
   _next: ->
-    if Array.isArray(@generator)
-      if @generator.length == 0 then return @_done()
-      @stream = @generator.shift()
-    else
-      @stream = @generator()
-      if not @stream? then return @_done()
-    @stream.on "readable", => @_readable()
-    @stream.on "end", => @_next()
-    @stream.on "error", (err) => @emit "error", err
+    Q(if Array.isArray(@generator) then @generator.shift() else @generator()).then (s) =>
+      if not s? then return @_done()
+      @stream = s
+      s.on "readable", => @_readable()
+      s.on "end", => @_next()
+      s.on "error", (err) => @emit "error", err
+      @_readable()
+    .fail (err) =>
+      @emit "error", err
 
   _readable: ->
-    return if (not @ready) or @closed
+    return if (not @ready) or @closed or (not @stream?)
     chunk = @stream.read()
     return if not chunk?
     @queue.push chunk

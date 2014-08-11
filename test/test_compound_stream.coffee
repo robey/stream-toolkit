@@ -54,3 +54,18 @@ describe "CompoundStream", ->
     sink.on "finish", ->
       sink.getBuffer().toString().should.eql "hello sailor!"
       done()
+
+  it "combines streams from promises", (done) ->
+    sink = new toolkit.SinkStream()
+    deferred1 = Q.defer()
+    deferred2 = Q.defer()
+    s = new toolkit.CompoundStream([ deferred1.promise, deferred2.promise ])
+    s.pipe(sink)
+    sink.on "finish", ->
+      sink.getBuffer().toString().should.eql "hello sailor!"
+      done()
+    Q.delay(10).then ->
+      deferred1.resolve(new toolkit.SourceStream("hello "))
+      Q.delay(50)
+    .then ->
+      deferred2.resolve(new toolkit.SourceStream("sailor!"))
