@@ -77,5 +77,8 @@ class QStream extends stream.Readable
       @write(new Buffer(0)).then -> deferred.resolve()
     deferred.promise
 
+  toString: ->
+    "QStream(closed=#{@closed}, ready=#{@ready}, queue=#{util.inspect @queue}, spliced=#{if @spliced? then @spliced.toString() else null})"
+
 
 exports.QStream = QStream

@@ -6,7 +6,6 @@ util = require "util"
 class LimitStream extends stream.Readable
   constructor: (@stream, @size) ->
     super()
-    @closed = false
     @ready = false
     @queue = []
     @stream.on "readable", => @_readable()
@@ -50,6 +49,9 @@ class LimitStream extends stream.Readable
   # this can be used to verify that all bytes were read if the stream ends.
   isFinished: ->
     @size == 0
+
+  toString: ->
+    "LimitStream(ready=#{@ready}, queue=#{util.inspect @queue}, size=#{@size}, stream=#{@stream.toString()})"
 
 
 exports.LimitStream = LimitStream
