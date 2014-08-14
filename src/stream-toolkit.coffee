@@ -29,7 +29,8 @@ qpipe = (readable, writable) ->
 qread = (stream, count) ->
   if count == 0 then return Q(new Buffer(0))
   rv = stream.read(count)
-  if rv? then return Q(rv)
+  # if the stream is closed, we won't get another "end" event, so check the stream's state
+  if rv? or stream._readableState.ended then return Q(rv)
   deferred = Q.defer()
   stream.once "readable", ->
     qread(stream, count).then (rv) ->
@@ -40,8 +41,18 @@ qread = (stream, count) ->
     deferred.reject(new Error("Stream ended"))
   deferred.promise
 
+# return a promise that will be fulfilled when this stream ends.
+qend = (stream) ->
+  deferred = Q.defer()
+  stream.once "error", (err) ->
+    deferred.reject(err)
+  stream.once "end", ->
+    deferred.resolve()
+  deferred.promise
+
 
 exports.fromHex = fromHex
+exports.qend = qend
 exports.qpipe = qpipe
 exports.qread = qread
 exports.CompoundStream = compound_stream.CompoundStream
