@@ -38,7 +38,7 @@ qread = (stream, count) ->
   stream.once "error", (err) ->
     deferred.reject(err)
   stream.once "end", ->
-    deferred.reject(new Error("Stream ended"))
+    deferred.resolve(null)
   deferred.promise
 
 # return a promise that will be fulfilled when this stream ends.
