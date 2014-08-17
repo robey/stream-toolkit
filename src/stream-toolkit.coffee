@@ -43,6 +43,8 @@ qread = (stream, count) ->
 
 # return a promise that will be fulfilled when this stream ends.
 qend = (stream) ->
+  # if the stream is closed, we won't get another "end" event, so check the stream's state
+  if stream._readableState.ended then return Q()
   deferred = Q.defer()
   stream.once "error", (err) ->
     deferred.reject(err)
