@@ -2,6 +2,7 @@ buffer_streams = require "./stream-toolkit/buffer_streams"
 compound_stream = require "./stream-toolkit/compound_stream"
 limit_stream = require "./stream-toolkit/limit_stream"
 q_stream = require "./stream-toolkit/q_stream"
+util = require "util"
 
 pad0 = (s, n) ->
   while s.length < n then s = "0" + s
@@ -59,6 +60,7 @@ exports.qpipe = qpipe
 exports.qread = qread
 exports.CompoundStream = compound_stream.CompoundStream
 exports.LimitStream = limit_stream.LimitStream
+exports.NullSinkStream = buffer_streams.NullSinkStream
 exports.QStream = q_stream.QStream
 exports.SinkStream = buffer_streams.SinkStream
 exports.SourceStream = buffer_streams.SourceStream

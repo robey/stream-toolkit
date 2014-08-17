@@ -45,10 +45,6 @@ class LimitStream extends stream.Readable
     # if the consumer is still hungry for more, see if a read() will pull out any more
     if @ready then @_readable()
 
-  # skip the rest of this limited stream and move on.
-  skip: ->
-    @read(@size)
-
   # returns true if the size limit has been reached.
   # this can be used to verify that all bytes were read if the stream ends.
   isFinished: ->

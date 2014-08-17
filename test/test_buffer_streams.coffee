@@ -23,3 +23,11 @@ describe "SourceStream", ->
     source.read(5).toString("UTF-8").should.eql "hello"
     source.read(7).toString("UTF-8").should.eql " sailor"
     (source.read()?).should.eql false
+
+describe "NullSinkStream", ->
+  it "throws away data", (done) ->
+    source = new toolkit.SourceStream("hello sailor")
+    sink = new toolkit.NullSinkStream()
+    source.pipe(sink)
+    source.on "end", -> done()
+    
