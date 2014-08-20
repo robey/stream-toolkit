@@ -2,8 +2,8 @@ stream = require "stream"
 
 # simple writable stream that collects all incoming data and provides it in a single (combined) buffer.
 class SinkStream extends stream.Writable
-  constructor: ->
-    super()
+  constructor: (options) ->
+    super(options)
     @buffers = []
 
   _write: (chunk, encoding, callback) ->
@@ -21,8 +21,8 @@ class SinkStream extends stream.Writable
 
 # writable stream that drains a readable by throwing away all the data.
 class NullSinkStream extends stream.Writable
-  constructor: ->
-    super()
+  constructor: (options) ->
+    super(options)
 
   _write: (chunk, encoding, callback) ->
     callback()
@@ -30,8 +30,8 @@ class NullSinkStream extends stream.Writable
 
 # feed a readable stream from a single buffer.
 class SourceStream extends stream.Readable
-  constructor: (@buffer) ->
-    super()
+  constructor: (@buffer, options) ->
+    super(options)
 
   _read: (size) ->
     @push @buffer

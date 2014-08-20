@@ -17,13 +17,18 @@ fromHex = (str) ->
 
 Q = require "q"
 
-qpipe = (readable, writable) ->
+untilPromise = (promise, obj, event, handler) ->
+  obj.once event, handler
+  cleanup = -> obj.removeListener(event, handler)
+  promise.then(cleanup, cleanup)
+
+qpipe = (readable, writable, options) ->
   deferred = Q.defer()
-  writable.once "finish", ->
+  untilPromise deferred.promise, writable, "finish", ->
     deferred.resolve()
-  writable.once "error", (err) ->
+  untilPromise deferred.promise, writable, "error", (err) ->
     deferred.reject(err)
-  readable.pipe(writable)
+  readable.pipe(writable, options)
   deferred.promise
 
 # turn a stream.read(N) into a function that returns a promise.
@@ -33,12 +38,12 @@ qread = (stream, count) ->
   # if the stream is closed, we won't get another "end" event, so check the stream's state
   if rv? or stream._readableState.ended then return Q(rv)
   deferred = Q.defer()
-  stream.once "readable", ->
+  untilPromise deferred.promise, stream, "readable", ->
     qread(stream, count).then (rv) ->
       deferred.resolve(rv)
-  stream.once "error", (err) ->
+  untilPromise deferred.promise, stream, "error", (err) ->
     deferred.reject(err)
-  stream.once "end", ->
+  untilPromise deferred.promise, stream, "end", ->
     deferred.resolve(null)
   deferred.promise
 
@@ -47,9 +52,9 @@ qend = (stream) ->
   # if the stream is closed, we won't get another "end" event, so check the stream's state
   if stream._readableState.ended then return Q()
   deferred = Q.defer()
-  stream.once "error", (err) ->
+  untilPromise deferred.promise, stream, "error", (err) ->
     deferred.reject(err)
-  stream.once "end", ->
+  untilPromise deferred.promise, stream, "end", ->
     deferred.resolve()
   deferred.promise
 
