@@ -11,7 +11,7 @@ describe "QStream", ->
   it "pushes when active", future ->
     sink = new toolkit.SinkStream()
     qs = new toolkit.QStream()
-    promise = qs.pipe(sink)
+    promise = toolkit.qpipe(qs, sink)
     qs.write(new Buffer([ 0x0f ])).then ->
       qs.write(new Buffer([ 0x0d ]))
     .then ->
@@ -27,7 +27,7 @@ describe "QStream", ->
     promise1 = qs.write(new Buffer([ 0x41 ]))
     promise2 = qs.write(new Buffer([ 0x42 ]))
     qs.close()
-    promise = qs.pipe(sink).then ->
+    promise = toolkit.qpipe(qs, sink).then ->
       toolkit.toHex(sink.getBuffer()).should.eql "4142"
 
   it "acks only when data is received", future ->
@@ -36,7 +36,7 @@ describe "QStream", ->
     slowWriter._write = (chunk, encoding, callback) ->
       slowWriter.buffers.push { chunk, callback }
     ps = new toolkit.QStream()
-    promise = ps.pipe(slowWriter)
+    promise = toolkit.qpipe(ps, slowWriter)
     flag = 0
     ps.write(new Buffer([ 0x41, 0x42, 0x43 ])).then ->
       flag.should.eql 1
@@ -50,7 +50,7 @@ describe "QStream", ->
   it "splices in a simple stream", future ->
     sink = new toolkit.SinkStream()
     qs = new toolkit.QStream()
-    promise = qs.pipe(sink)
+    promise = toolkit.qpipe(qs, sink)
     qs.write(new Buffer("siber")).then ->
       qs.spliceFrom(new toolkit.SourceStream("ian khat"))
     .then ->
@@ -77,14 +77,14 @@ describe "QStream", ->
       slowReader.push new Buffer([ 0x49 ])
       slowReader.push null
     sink = new toolkit.SinkStream()
-    qs.pipe(sink).then ->
+    toolkit.qpipe(qs, sink).then ->
       toolkit.toHex(sink.getBuffer()).should.eql "414942"
     x
 
   it "splices in a LimitStream", future ->
     sink = new toolkit.SinkStream()
     qs = new toolkit.QStream()
-    promise1 = qs.pipe(sink)
+    promise1 = toolkit.qpipe(qs, sink)
     slowReader = new stream.Readable()
     slowReader._read = (n) ->
     promise2 = qs.spliceFrom(new toolkit.LimitStream(slowReader, 5)).then ->
@@ -96,7 +96,7 @@ describe "QStream", ->
   it "splices in a nested QStream", future ->
     sink = new toolkit.SinkStream()
     qs = new toolkit.QStream()
-    promise1 = qs.pipe(sink)
+    promise1 = toolkit.qpipe(qs, sink)
     qs2 = new toolkit.QStream()
     promise2 = qs.spliceFrom(new toolkit.LimitStream(qs2, 5)).then ->
       qs.close()

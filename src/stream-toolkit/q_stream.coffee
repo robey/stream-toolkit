@@ -48,17 +48,6 @@ class QStream extends stream.Readable
     return if not chunk?
     @write chunk
 
-  # pipe this into a writable, and return a promise that will resolve when the pipe is finished.
-  pipe: (writable) ->
-    deferred = Q.defer()
-    writable.once "finish", ->
-      deferred.resolve()
-    writable.once "error", (err) ->
-      deferred.reject(err)
-    # no better way to do this? :(
-    QStream.__super__.pipe.apply(@, [ writable ])
-    deferred.promise
-
   # splice another stream into this one.
   # returns a promise that is fulfilled when the inner stream is finished.
   # the QStream will remain open for further data until closed explicitly.
