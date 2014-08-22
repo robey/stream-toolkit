@@ -1,5 +1,6 @@
 buffer_streams = require "./stream-toolkit/buffer_streams"
 compound_stream = require "./stream-toolkit/compound_stream"
+counting_stream = require "./stream-toolkit/counting_stream"
 limit_stream = require "./stream-toolkit/limit_stream"
 q_stream = require "./stream-toolkit/q_stream"
 q_wrappers = require "./stream-toolkit/q_wrappers"
@@ -22,6 +23,8 @@ exports.SinkStream = buffer_streams.SinkStream
 exports.SourceStream = buffer_streams.SourceStream
 
 exports.CompoundStream = compound_stream.CompoundStream
+
+exports.CountingStream = counting_stream.CountingStream
 
 exports.LimitStream = limit_stream.LimitStream
 
