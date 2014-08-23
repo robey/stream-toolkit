@@ -13,7 +13,7 @@ untilPromise = (promise, obj, eventName, handler) ->
   cleanup = -> obj.removeListener(eventName, h)
   promise.then(cleanup, cleanup)
 
-# return a promise that will be fulfilled when this stream ends.
+# return a promise that will be fulfilled when a readable stream ends.
 qend = (stream) ->
   # if the stream is already closed, we won't get another "end" event, so check the stream's state.
   if stream._readableState.ended then return Q()
@@ -21,6 +21,17 @@ qend = (stream) ->
   untilPromise deferred.promise, stream, "error", (err) ->
     deferred.reject(err)
   untilPromise deferred.promise, stream, "end", ->
+    deferred.resolve()
+  deferred.promise
+
+# return a promise that will be fulfilled when a writable stream is finished.
+qfinish = (stream) ->
+  # if the stream is already closed, we won't get another "finish" event, so check the stream's state.
+  if stream._writableState.finished then return Q()
+  deferred = Q.defer()
+  untilPromise deferred.promise, stream, "error", (err) ->
+    deferred.reject(err)
+  untilPromise deferred.promise, stream, "finish", ->
     deferred.resolve()
   deferred.promise
 
@@ -47,5 +58,6 @@ qread = (stream, count) ->
 
 
 exports.qend = qend
+exports.qfinish = qfinish
 exports.qpipe = qpipe
 exports.qread = qread

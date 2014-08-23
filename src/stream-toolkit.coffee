@@ -31,6 +31,7 @@ exports.LimitStream = limit_stream.LimitStream
 exports.QStream = q_stream.QStream
 
 exports.qend = q_wrappers.qend
+exports.qfinish = q_wrappers.qfinish
 exports.qpipe = q_wrappers.qpipe
 exports.qread = q_wrappers.qread
 
