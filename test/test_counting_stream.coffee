@@ -18,10 +18,9 @@ describe "CountingStream", ->
     counter.on "count", (n) -> bytes.push n
     sink.on "finish", ->
       sink.getBuffer().toString().should.eql "hello not again!"
-      bytes.length.should.eql 3
+      bytes.length.should.eql 2
       bytes[0].should.eql 6
       bytes[1].should.eql 16
-      bytes[2].should.eql 16
       done()
     source.write "hello "
     source.write "not again!"

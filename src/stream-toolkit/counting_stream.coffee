@@ -9,14 +9,15 @@ class CountingStream extends stream.Transform
   _transform: (buffer, encoding, callback) ->
     if buffer? and (buffer instanceof Buffer)
       @bytes += buffer.length
-    @push buffer
     @emit "count", @bytes
+    @push buffer
     callback()
 
   _flush: (callback) ->
-    @lastUpdate = 0
-    @emit "count", @bytes
     callback()
+
+  close: ->
+    @push null
 
 
 exports.CountingStream = CountingStream
