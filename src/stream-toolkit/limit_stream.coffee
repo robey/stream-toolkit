@@ -8,16 +8,15 @@ class LimitStream extends stream.Readable
     super()
     @ready = false
     @queue = []
-    @stream.on "readable", => @_readable()
-    @stream.on "end", => @queue.push null
-    @stream.on "error", (err) => @emit "error", err
+    @handlers =
+      readable: => @_readable()
+      end: => @_end()
+      error: (err) => @emit "error", err
+    for k, v of @handlers then @stream.on k, v
 
   _readable: ->
     return if not @ready
-    if @size == 0
-      @queue.push null
-      @_drain()
-      return
+    if @size == 0 then return @_end()
     chunk = @stream.read()
     return if not chunk?
     overage = null
@@ -31,6 +30,12 @@ class LimitStream extends stream.Readable
     # okay to unshift now: if we had overage, size is 0 and our _readable callback will return immediately.
     if overage? then @stream.unshift overage
     # send immediately to the consumer if they're waiting
+    @_drain()
+
+  _end: ->
+    # stop tracking the input stream
+    for k, v of @handlers then @stream.removeListener k, v
+    @queue.push null
     @_drain()
 
   # push out any data we have buffered up.
