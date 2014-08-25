@@ -10,8 +10,7 @@ untilPromise = (promise, obj, eventName, handler) ->
     obj.removeListener(eventName, h)
     handler(x...)
   obj.on eventName, h
-  cleanup = -> obj.removeListener(eventName, h)
-  promise.then(cleanup, cleanup)
+  promise.finally -> obj.removeListener(eventName, h)
 
 # return a promise that will be fulfilled when a readable stream ends.
 qend = (stream) ->

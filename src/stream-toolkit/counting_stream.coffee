@@ -1,5 +1,7 @@
 stream = require "stream"
+util = require "util"
 
+# transform for buffer streams that counts how many bytes came through.
 class CountingStream extends stream.Transform
   constructor: (options) ->
     super(options)

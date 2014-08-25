@@ -55,7 +55,8 @@ class QStream extends stream.Readable
     if @spliced? then throw new Error("Already splicing!")
     @spliced = inStream
     deferred = Q.defer()
-    inStream.on "readable", => @_feedFromSplice()
+    inStream.on "readable", =>
+      @_feedFromSplice()
     inStream.once "error", (err) =>
       return unless @spliced?
       @spliced = null
@@ -63,7 +64,8 @@ class QStream extends stream.Readable
     inStream.once "end", =>
       return unless @spliced?
       @spliced = null
-      @write(new Buffer(0)).then -> deferred.resolve()
+      @write(new Buffer(0)).then ->
+        deferred.resolve()
     deferred.promise
 
   toString: ->

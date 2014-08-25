@@ -105,3 +105,20 @@ describe "QStream", ->
     .then ->
       Q.all([ promise1, promise2 ]).then ->
         sink.getBuffer().toString().should.eql "hello"
+
+  it "splices in a transformed stream", future ->
+    source = new stream.Readable()
+    source._read = ->
+      Q.delay(100).then ->
+        source.push new Buffer("hi")
+        source.push null
+    transformed = new stream.Transform()
+    transformed._transform = (buffer, _, callback) ->
+      transformed.push(buffer)
+      callback()
+    source.pipe(transformed)
+    sink = new toolkit.SinkStream()
+    qs = new toolkit.QStream()
+    qs.pipe(sink)
+    qs.spliceFrom(transformed).then ->
+      sink.getBuffer().toString().should.eql "hi"
