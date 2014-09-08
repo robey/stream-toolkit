@@ -11,15 +11,15 @@ describe "QStream", ->
   it "pushes when active", future ->
     sink = new toolkit.SinkStream()
     qs = new toolkit.QStream()
-    promise = toolkit.qpipe(qs, sink)
+    qs.pipe(sink)
     qs.write(new Buffer([ 0x0f ])).then ->
       qs.write(new Buffer([ 0x0d ]))
     .then ->
       qs.close()
     .then ->
-      promise
+      toolkit.qfinish(sink)
     .then ->
-      toolkit.toHex(sink.getBuffer()).should.eql "0f0d"
+      sink.getBuffer().toString("hex").should.eql "0f0d"
 
   it "drains a full stream", future ->
     sink = new toolkit.SinkStream()
@@ -27,8 +27,9 @@ describe "QStream", ->
     promise1 = qs.write(new Buffer([ 0x41 ]))
     promise2 = qs.write(new Buffer([ 0x42 ]))
     qs.close()
-    promise = toolkit.qpipe(qs, sink).then ->
-      toolkit.toHex(sink.getBuffer()).should.eql "4142"
+    qs.pipe(sink)
+    toolkit.qfinish(sink).then ->
+      sink.getBuffer().toString("hex").should.eql "4142"
 
   it "acks only when data is received", future ->
     slowWriter = new stream.Writable()
@@ -36,7 +37,7 @@ describe "QStream", ->
     slowWriter._write = (chunk, encoding, callback) ->
       slowWriter.buffers.push { chunk, callback }
     ps = new toolkit.QStream()
-    promise = toolkit.qpipe(ps, slowWriter)
+    ps.pipe(slowWriter)
     flag = 0
     ps.write(new Buffer([ 0x41, 0x42, 0x43 ])).then ->
       flag.should.eql 1
@@ -50,7 +51,7 @@ describe "QStream", ->
   it "splices in a simple stream", future ->
     sink = new toolkit.SinkStream()
     qs = new toolkit.QStream()
-    promise = toolkit.qpipe(qs, sink)
+    qs.pipe(sink)
     qs.write(new Buffer("siber")).then ->
       qs.spliceFrom(new toolkit.SourceStream("ian khat"))
     .then ->
@@ -58,7 +59,7 @@ describe "QStream", ->
     .then ->
       qs.close()
     .then ->
-      promise
+      toolkit.qfinish(sink)
     .then ->
       sink.getBuffer().toString().should.eql "siberian khatru"
 
@@ -77,33 +78,34 @@ describe "QStream", ->
       slowReader.push new Buffer([ 0x49 ])
       slowReader.push null
     sink = new toolkit.SinkStream()
-    toolkit.qpipe(qs, sink).then ->
-      toolkit.toHex(sink.getBuffer()).should.eql "414942"
+    qs.pipe(sink)
+    toolkit.qend(sink).then ->
+      sink.getBuffer().toString("hex").should.eql "414942"
     x
 
   it "splices in a LimitStream", future ->
     sink = new toolkit.SinkStream()
     qs = new toolkit.QStream()
-    promise1 = toolkit.qpipe(qs, sink)
+    qs.pipe(sink)
     slowReader = new stream.Readable()
     slowReader._read = (n) ->
-    promise2 = qs.spliceFrom(new toolkit.LimitStream(slowReader, 5)).then ->
+    promise = qs.spliceFrom(new toolkit.LimitStream(slowReader, 5)).then ->
       qs.close()
     slowReader.push new Buffer("television")
-    Q.all([ promise1, promise2 ]).then ->
+    Q.all([ toolkit.qfinish(sink), promise ]).then ->
       sink.getBuffer().toString().should.eql "telev"
 
   it "splices in a nested QStream", future ->
     sink = new toolkit.SinkStream()
     qs = new toolkit.QStream()
-    promise1 = toolkit.qpipe(qs, sink)
+    qs.pipe(sink)
     qs2 = new toolkit.QStream()
-    promise2 = qs.spliceFrom(new toolkit.LimitStream(qs2, 5)).then ->
+    promise = qs.spliceFrom(new toolkit.LimitStream(qs2, 5)).then ->
       qs.close()
     qs2.write(new Buffer("hello")).then ->
       qs2.close()
     .then ->
-      Q.all([ promise1, promise2 ]).then ->
+      Q.all([ toolkit.qfinish(sink), promise ]).then ->
         sink.getBuffer().toString().should.eql "hello"
 
   it "splices in a transformed stream", future ->

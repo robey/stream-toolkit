@@ -5,18 +5,7 @@ limit_stream = require "./stream-toolkit/limit_stream"
 q_stream = require "./stream-toolkit/q_stream"
 q_wrappers = require "./stream-toolkit/q_wrappers"
 util = require "util"
-
-pad0 = (s, n) ->
-  while s.length < n then s = "0" + s
-  s
-
-toHex = (buffer) ->
-  # can't map across a buffer, even tho it supports operator[] :(
-  [0 ... buffer.length].map((n) -> pad0(buffer[n].toString(16), 2)).join("")
-
-fromHex = (str) ->
-  new Buffer([0 ... str.length / 2].map (i) -> parseInt(str[i * 2 ... (i + 1) * 2], 16))
-
+weld = require "./stream-toolkit/weld"
 
 exports.NullSinkStream = buffer_streams.NullSinkStream
 exports.SinkStream = buffer_streams.SinkStream
@@ -30,10 +19,11 @@ exports.LimitStream = limit_stream.LimitStream
 
 exports.QStream = q_stream.QStream
 
+exports.pipeFromBuffer = q_wrappers.pipeFromBuffer
+exports.pipeToBuffer = q_wrappers.pipeToBuffer
 exports.qend = q_wrappers.qend
 exports.qfinish = q_wrappers.qfinish
-exports.qpipe = q_wrappers.qpipe
 exports.qread = q_wrappers.qread
+exports.qwrite = q_wrappers.qwrite
 
-exports.fromHex = fromHex
-exports.toHex = toHex
+exports.weld = weld.weld

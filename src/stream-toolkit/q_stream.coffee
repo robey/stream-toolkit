@@ -66,6 +66,7 @@ class QStream extends stream.Readable
       @spliced = null
       @write(new Buffer(0)).then ->
         deferred.resolve()
+    @_feedFromSplice()
     deferred.promise
 
   toString: ->
