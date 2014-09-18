@@ -1,6 +1,19 @@
 Q = require "q"
+util = require "util"
 
 buffer_streams = require "./buffer_streams"
+
+# add several one-shot event handlers to an object.
+# if any of these handlers is triggered, all of them are removed.
+handleOneShots = (obj, handlers) ->
+  wrappedHandlers = {}
+  for k, f of handlers then do (k, f) ->
+    wrappedHandlers[k] = (x...) ->
+      removeWrappedHandlers()
+      f(x...)
+  removeWrappedHandlers = ->
+    for k, f of wrappedHandlers then obj.removeListener(k, f)
+  for k, f of wrappedHandlers then obj.on k, f
 
 # add a one-shot handler to an event.
 # the handler is removed once the event fires OR a promise is resolved.
@@ -12,15 +25,16 @@ untilPromise = (promise, obj, eventName, handler) ->
     obj.removeListener(eventName, h)
     handler(x...)
   obj.on eventName, h
-  promise.finally -> obj.removeListener(eventName, h)
+  promise.finally ->
+    obj.removeListener(eventName, h)
 
 # return a promise that will be fulfilled when a readable stream ends.
 qend = (stream) ->
   # if the stream is already closed, we won't get another "end" event, so check the stream's state.
   if stream._readableState?.endEmitted then return Q()
   deferred = Q.defer()
-  untilPromise deferred.promise, stream, "error", (err) ->
-    deferred.reject(err)
+  untilPromise deferred.promise, stream, "error", (error) ->
+    deferred.reject(error)
   untilPromise deferred.promise, stream, "end", ->
     deferred.resolve()
   deferred.promise
@@ -30,8 +44,8 @@ qfinish = (stream) ->
   # if the stream is already closed, we won't get another "finish" event, so check the stream's state.
   if stream._writableState.finished then return Q()
   deferred = Q.defer()
-  untilPromise deferred.promise, stream, "error", (err) ->
-    deferred.reject(err)
+  untilPromise deferred.promise, stream, "error", (error) ->
+    deferred.reject(error)
   untilPromise deferred.promise, stream, "finish", ->
     deferred.resolve()
   deferred.promise
@@ -41,15 +55,13 @@ qread = (stream, count) ->
   if count == 0 then return Q(new Buffer(0))
   rv = stream.read(count)
   # if the stream is closed, we won't get another "end" event, so check the stream's state.
-  if rv? or stream._readableState.endEmitted then return Q(rv)
+  if rv? or stream._readableState?.endEmitted then return Q(rv)
+
   deferred = Q.defer()
-  untilPromise deferred.promise, stream, "readable", ->
-    qread(stream, count).then (rv) ->
-      deferred.resolve(rv)
-  untilPromise deferred.promise, stream, "error", (err) ->
-    deferred.reject(err)
-  untilPromise deferred.promise, stream, "end", ->
-    deferred.resolve(null)
+  handleOneShots stream,
+    readable: -> deferred.resolve(qread(stream, count))
+    error: (error) -> deferred.reject(error)
+    end: -> deferred.resolve(null)
   deferred.promise
 
 # turn stream.write(data) into a function that returns a promise.
