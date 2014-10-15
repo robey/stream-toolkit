@@ -10,7 +10,7 @@ future = mocha_sprinkles.future
 describe "CountingStream", ->
   it "counts", (done) ->
     sink = new toolkit.SinkStream()
-    source = new toolkit.QStream()
+    source = new stream.PassThrough()
     counter = new toolkit.CountingStream()
     source.pipe(counter)
     counter.pipe(sink)
@@ -24,4 +24,4 @@ describe "CountingStream", ->
       done()
     source.write "hello "
     source.write "not again!"
-    source.close()
+    source.end()

@@ -2,7 +2,6 @@ buffer_streams = require "./stream-toolkit/buffer_streams"
 compound_stream = require "./stream-toolkit/compound_stream"
 counting_stream = require "./stream-toolkit/counting_stream"
 limit_stream = require "./stream-toolkit/limit_stream"
-q_stream = require "./stream-toolkit/q_stream"
 q_wrappers = require "./stream-toolkit/q_wrappers"
 util = require "util"
 weld = require "./stream-toolkit/weld"
@@ -16,8 +15,6 @@ exports.CompoundStream = compound_stream.CompoundStream
 exports.CountingStream = counting_stream.CountingStream
 
 exports.LimitStream = limit_stream.LimitStream
-
-exports.QStream = q_stream.QStream
 
 exports.pipeFromBuffer = q_wrappers.pipeFromBuffer
 exports.pipeToBuffer = q_wrappers.pipeToBuffer
