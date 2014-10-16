@@ -2,6 +2,13 @@
 
 This is a loose collection of power tools for node.js streams, including helpers for improving the interface with promises.
 
+## Install
+
+```sh
+$ npm install
+$ npm run test
+```
+
 ## Sources and sinks
 
 - `SourceStream` - create a readable stream from a string or buffer
@@ -91,14 +98,61 @@ toolkit.pipeToBuffer(stream).then(function (buffer) {
 
 ## Fancy streams
 
+- `CompoundStream` - create a readable stream composed of a series of other streams
 
+`CompoundStream` takes a set of component streams and concatenates them together into one single continuous stream. The constructor takes a generator function. The function is called initially to provide the first stream; when that stream ends, the generator is called again to provide the next stream. When there are no more component streams, the generator should return `null` and the `CompoundStream` itself will end.
 
-exports.CompoundStream = compound_stream.CompoundStream
+The generator function may return a *promise* for a stream instead of a stream. That's fine.
 
-exports.CountingStream = counting_stream.CountingStream
+The generator function may be an array of streams if you don't need to generate them on the fly. 
 
-exports.LimitStream = limit_stream.LimitStream
+```javascript
+var toolkit = require("stream-toolkit");
+var source1 = new toolkit.SourceStream("hello ");
+var source2 = new toolkit.SourceStream("sailor");
+var source3 = new toolkit.SourceStream("!");
+var compound = new toolkit.CompoundStream([ source1, source2, source3 ]);
+compound.pipe(...);
+```
 
+- `LimitStream` - wrap a readable stream to enforce a length limit
 
-exports.weld = weld.weld
+```javascript
+var toolkit = require("stream-toolkit");
+var limited = new toolkit.LimitStream(source, 10);
+stuff.pipe(limited).pipe(...);
+// only 10 bytes will emerge from the pipe
+```
 
+- `CountingStream` - simple Transform that counts the bytes going through it
+
+The stream emits "count" events when the count changes. The event contains the total byte-count so far.
+
+```javascript
+var toolkit = require("stream-toolkit");
+var counter = new toolkit.CountingStream();
+stuff.pipe(counter).pipe(...);
+counter.on("count", function (byteCount) {
+  // bytes so far...
+});
+```
+
+## Weld
+
+- `weld` - pipe a series of streams into each other, returning a virtual stream that represents the whole series
+
+```javascript
+var toolkit = require("stream-toolkit");
+// equivalent to: source1.pipe(transform1).pipe(transform2);
+var stream = toolkit.weld(source1, transform1, transform2);
+// new welded stream can be treated as a transform, itself:
+stuff.pipe(stream).pipe(...);
+```
+
+## License
+
+Apache 2 (open-source) license, included in 'LICENSE.txt'.
+
+## Authors
+
+- @robey - Robey Pointer <robeypointer@gmail.com>
