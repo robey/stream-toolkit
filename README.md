@@ -31,9 +31,65 @@ var toolkit = require("stream-toolkit");
 garbage.pipe(new toolkit.NullSinkStream());
 ```
 
+## Promise wrappers
+
+The promise wrappers set one-shot event handlers when necessary. If they can avoid it (because data is already available, for example), they do. Error events are converted into failing promises.
+
+- `qread` - return a promise that reads data from a readable stream
     
+```javascript
+var toolkit = require("stream-toolkit");
+toolkit.qread(stream, 5).then(function (buffer) {
+  // 'buffer' contains the 5 bytes
+});
+```
 
+- `qwrite` - return a promise that data has been accepted downsteam (the "write" callback has been called)
 
+```javascript
+var toolkit = require("stream-toolkit");
+toolkit.qwrite(stream, new Buffer("data")).then(function () {
+  // "data" has been accepted downstream
+});
+```
+
+- `qend` - return a promise that a readable stream has ended
+
+```javascript
+var toolkit = require("stream-toolkit");
+toolkit.qend(stream).then(function () {
+  // stream is ended
+});
+```
+
+- `qfinish` - return a promise that a writable stream has finished
+
+```javascript
+var toolkit = require("stream-toolkit");
+toolkit.qfinish(stream).then(function () {
+  // stream is finished
+});
+```
+
+- `pipeFromBuffer` - shortcut for creating a `SourceStream`, piping it into another stream, and calling `qend`
+
+```javascript
+var toolkit = require("stream-toolkit");
+toolkit.pipeFromBuffer("data", stream).then(function () {
+  // stream has processed all of "data"
+});
+```
+
+- `pipeToBuffer` - shortcut for creating a `SinkStream`, piping a stream into it, and calling `qfinish`
+
+```javascript
+var toolkit = require("stream-toolkit");
+toolkit.pipeToBuffer(stream).then(function (buffer) {
+  // 'buffer' contains all of stream, and stream has ended.
+});
+```
+
+## Fancy streams
 
 
 
@@ -43,12 +99,6 @@ exports.CountingStream = counting_stream.CountingStream
 
 exports.LimitStream = limit_stream.LimitStream
 
-exports.pipeFromBuffer = q_wrappers.pipeFromBuffer
-exports.pipeToBuffer = q_wrappers.pipeToBuffer
-exports.qend = q_wrappers.qend
-exports.qfinish = q_wrappers.qfinish
-exports.qread = q_wrappers.qread
-exports.qwrite = q_wrappers.qwrite
 
 exports.weld = weld.weld
 
