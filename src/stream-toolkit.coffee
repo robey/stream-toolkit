@@ -2,25 +2,22 @@ buffer_streams = require "./stream-toolkit/buffer_streams"
 compound_stream = require "./stream-toolkit/compound_stream"
 counting_stream = require "./stream-toolkit/counting_stream"
 limit_stream = require "./stream-toolkit/limit_stream"
-q_wrappers = require "./stream-toolkit/q_wrappers"
+promise_wrappers = require "./stream-toolkit/promise_wrappers"
 util = require "util"
 weld = require "./stream-toolkit/weld"
 
-exports.NullSinkStream = buffer_streams.NullSinkStream
-exports.SinkStream = buffer_streams.SinkStream
-exports.SourceStream = buffer_streams.SourceStream
+exports.nullSinkStream = buffer_streams.nullSinkStream
+exports.sinkStream = buffer_streams.sinkStream
+exports.pipeFromBuffer = buffer_streams.pipeFromBuffer
+exports.pipeToBuffer = buffer_streams.pipeToBuffer
+exports.sourceStream = buffer_streams.sourceStream
 
-exports.CompoundStream = compound_stream.CompoundStream
+exports.compoundStream = compound_stream.compoundStream
 
-exports.CountingStream = counting_stream.CountingStream
+exports.countingStream = counting_stream.countingStream
 
-exports.LimitStream = limit_stream.LimitStream
+exports.limitStream = limit_stream.limitStream
 
-exports.pipeFromBuffer = q_wrappers.pipeFromBuffer
-exports.pipeToBuffer = q_wrappers.pipeToBuffer
-exports.qend = q_wrappers.qend
-exports.qfinish = q_wrappers.qfinish
-exports.qread = q_wrappers.qread
-exports.qwrite = q_wrappers.qwrite
+exports.promisify = promise_wrappers.promisify
 
 exports.weld = weld.weld

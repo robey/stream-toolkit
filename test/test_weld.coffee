@@ -1,5 +1,4 @@
 mocha_sprinkles = require "mocha-sprinkles"
-Q = require "q"
 stream = require "stream"
 util = require "util"
 
@@ -28,7 +27,7 @@ suffixer._flush = (callback) ->
  
 describe "weld", ->
   it "welds a few streams together", future ->
-    source = new toolkit.SourceStream("hello sailor!")
+    source = toolkit.sourceStream("hello sailor!")
     s = toolkit.weld(capitalizer, prefixer, suffixer)
     source.pipe(s)
     toolkit.pipeToBuffer(s).then (buffer) ->

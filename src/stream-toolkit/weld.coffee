@@ -1,4 +1,3 @@
-Q = require "q"
 stream = require "stream"
 util = require "util"
 

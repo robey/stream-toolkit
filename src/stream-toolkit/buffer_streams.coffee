@@ -1,5 +1,7 @@
 stream = require "stream"
 
+promise_wrappers = require "./promise_wrappers"
+
 # simple writable stream that collects all incoming data and provides it in a single (combined) buffer.
 class SinkStream extends stream.Writable
   constructor: (options) ->
@@ -38,6 +40,31 @@ class SourceStream extends stream.Readable
     @push null
 
 
-exports.NullSinkStream = NullSinkStream
-exports.SinkStream = SinkStream
-exports.SourceStream = SourceStream
+sinkStream = (options) ->
+  promise_wrappers.promisify(new SinkStream(options))
+
+nullSinkStream = (options) ->
+  promise_wrappers.promisify(new NullSinkStream(options))
+
+sourceStream = (buffer, options) ->
+  promise_wrappers.promisify(new SourceStream(buffer, options))
+
+# shortcut for creating a SourceStream and piping it to a writable.
+pipeFromBuffer = (buffer, writable, options) ->
+  source = sourceStream(buffer)
+  source.pipe(writable, options)
+  source.endPromise()
+
+# shortcut for creating a SinkStream and piping a readable into it.
+pipeToBuffer = (readable, options) ->
+  sink = sinkStream()
+  readable.pipe(sink, options)
+  sink.finishPromise().then ->
+    sink.getBuffer()
+
+
+exports.nullSinkStream = nullSinkStream
+exports.pipeFromBuffer = pipeFromBuffer
+exports.pipeToBuffer = pipeToBuffer
+exports.sinkStream = sinkStream
+exports.sourceStream = sourceStream

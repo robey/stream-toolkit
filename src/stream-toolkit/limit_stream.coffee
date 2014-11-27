@@ -1,6 +1,7 @@
-Q = require "q"
 stream = require "stream"
 util = require "util"
+
+promise_wrappers = require "./promise_wrappers"
 
 # Readable stream that wraps another, with a size limit.
 class LimitStream extends stream.Readable
@@ -59,4 +60,8 @@ class LimitStream extends stream.Readable
     "LimitStream(ready=#{@ready}, queue=#{util.inspect @queue}, size=#{@size}, stream=#{@stream.toString()})"
 
 
-exports.LimitStream = LimitStream
+limitStream = (stream, size) ->
+  promise_wrappers.promisify(new LimitStream(stream, size))
+
+
+exports.limitStream = limitStream

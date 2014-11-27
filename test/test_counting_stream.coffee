@@ -1,5 +1,4 @@
 mocha_sprinkles = require "mocha-sprinkles"
-Q = require "q"
 stream = require "stream"
 util = require "util"
 
@@ -9,9 +8,9 @@ future = mocha_sprinkles.future
 
 describe "CountingStream", ->
   it "counts", (done) ->
-    sink = new toolkit.SinkStream()
+    sink = toolkit.sinkStream()
     source = new stream.PassThrough()
-    counter = new toolkit.CountingStream()
+    counter = toolkit.countingStream()
     source.pipe(counter)
     counter.pipe(sink)
     bytes = []

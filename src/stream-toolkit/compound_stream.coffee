@@ -1,6 +1,8 @@
-Q = require "q"
+Promise = require "bluebird"
 stream = require "stream"
 util = require "util"
+
+promise_wrappers = require "./promise_wrappers"
 
 # Readable stream composed from a series of smaller streams.
 # Generator is a function that returns each new stream in sequence, either
@@ -16,14 +18,14 @@ class CompoundStream extends stream.Readable
     @_next()
 
   _next: ->
-    Q(if Array.isArray(@generator) then @generator.shift() else @generator()).then (s) =>
+    Promise.resolve(if Array.isArray(@generator) then @generator.shift() else @generator()).then (s) =>
       if not s? then return @_done()
       @stream = s
       s.on "readable", => @_readable()
       s.on "end", => @_next()
       s.on "error", (err) => @emit "error", err
       @_readable()
-    .fail (err) =>
+    .catch (err) =>
       @emit "error", err
 
   _readable: ->
@@ -51,4 +53,8 @@ class CompoundStream extends stream.Readable
     @_drain()
 
 
-exports.CompoundStream = CompoundStream
+compoundStream = (generator) ->
+  promise_wrappers.promisify(new CompoundStream(generator))
+
+
+exports.compoundStream = compoundStream

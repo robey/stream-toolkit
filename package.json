@@ -22,7 +22,7 @@
     "test": "./node_modules/plz/bin/plz -v clean build test"
   },
   "dependencies": {
-    "q": "^1.0.1"
+    "bluebird": "*"
   },
   "devDependencies": {
     "coffee-script": "^1.7",

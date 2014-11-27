@@ -1,6 +1,8 @@
 stream = require "stream"
 util = require "util"
 
+promise_wrappers = require "./promise_wrappers"
+
 # transform for buffer streams that counts how many bytes came through.
 class CountingStream extends stream.Transform
   constructor: (options) ->
@@ -22,4 +24,8 @@ class CountingStream extends stream.Transform
     @push null
 
 
-exports.CountingStream = CountingStream
+countingStream = (options) ->
+  promise_wrappers.promisify(new CountingStream(options))
+
+
+exports.countingStream = countingStream
