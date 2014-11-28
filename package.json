@@ -30,5 +30,11 @@
     "mocha-sprinkles": "^2.0.0",
     "plz": "^2.0.3",
     "should": "*"
-  }
+  },
+  "main": "./lib/stream-toolkit",
+  "files": [
+    "build.plz",
+    "lib",
+    "test"
+  ]
 }
