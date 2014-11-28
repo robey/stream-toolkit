@@ -1,6 +1,6 @@
 {
   "name": "stream-toolkit",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "handy tools for working with streams",
   "main": "./lib/stream-toolkit.js",
   "keywords": [
@@ -27,7 +27,7 @@
   "devDependencies": {
     "coffee-script": "^1.7",
     "mocha": "*",
-    "mocha-sprinkles": "*",
+    "mocha-sprinkles": "^2.0.0",
     "plz": "^2.0.3",
     "should": "*"
   }

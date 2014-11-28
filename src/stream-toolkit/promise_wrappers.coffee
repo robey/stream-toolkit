@@ -28,6 +28,9 @@ untilPromise = (promise, obj, eventName, handler) ->
 
 # add promise-based methods to a stream
 promisify = (stream) ->
+  # only bother to add the methods once. :)
+  if stream.endPromise? then return stream
+
   stream.endPromise = ->
     # if the stream is already closed, we won't get another "end" event, so check the stream's state.
     if stream._readableState?.endEmitted then return Promise.resolve()
