@@ -6,7 +6,7 @@ This is a loose collection of power tools for node.js streams, including helpers
 
 ```sh
 $ npm install
-$ npm run test
+$ npm test
 ```
 
 ## Sources and sinks
@@ -45,7 +45,7 @@ garbage.pipe(toolkit.nullSinkStream());
 All of the streams provided by stream-toolkit are already promisified.
 
 - `readPromise` - return a promise that reads data from a readable stream
-    
+
 ```javascript
 var toolkit = require("stream-toolkit");
 toolkit.promisify(stream);
@@ -110,7 +110,7 @@ toolkit.pipeToBuffer(stream).then(function (buffer) {
 
 The generator function may return a *promise* for a stream instead of a stream. That's fine.
 
-The generator function may be an array of streams if you don't need to generate them on the fly. 
+The generator function may be an array of streams if you don't need to generate them on the fly.
 
 ```javascript
 var toolkit = require("stream-toolkit");

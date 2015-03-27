@@ -19,16 +19,18 @@
     }
   ],
   "scripts": {
-    "test": "./node_modules/plz/bin/plz -v clean build test"
+    "clean": "rm -rf lib test/lib",
+    "distclean": "npm run clean && rm -rf node_modules",
+    "prepublish": "babel --source-maps --out-dir lib src && babel --source-maps --out-dir test/lib test/src",
+    "test": "mocha -R spec --colors test/lib"
   },
   "dependencies": {
     "bluebird": "*"
   },
   "devDependencies": {
-    "coffee-script": "^1.7",
+    "babel": "*",
     "mocha": "*",
     "mocha-sprinkles": "^2.0.0",
-    "plz": "^2.0.3",
     "should": "*"
   },
   "main": "./lib/stream-toolkit",
