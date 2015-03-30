@@ -1,8 +1,8 @@
 {
   "name": "stream-toolkit",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "handy tools for working with streams",
-  "main": "./lib/stream-toolkit.js",
+  "main": "./lib/stream-toolkit",
   "keywords": [
     "streams"
   ],
@@ -34,7 +34,6 @@
     "should": "*",
     "source-map-support": "*"
   },
-  "main": "./lib/stream-toolkit",
   "files": [
     "build.plz",
     "lib",
