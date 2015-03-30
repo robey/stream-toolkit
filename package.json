@@ -31,7 +31,8 @@
     "babel": "*",
     "mocha": "*",
     "mocha-sprinkles": "^2.0.0",
-    "should": "*"
+    "should": "*",
+    "source-map-support": "*"
   },
   "main": "./lib/stream-toolkit",
   "files": [
