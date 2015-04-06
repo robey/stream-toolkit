@@ -1,6 +1,6 @@
 {
   "name": "stream-toolkit",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "handy tools for working with streams",
   "main": "./lib/stream-toolkit",
   "keywords": [

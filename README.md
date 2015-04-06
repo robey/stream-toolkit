@@ -155,6 +155,16 @@ var stream = toolkit.weld(source1, transform1, transform2);
 stuff.pipe(stream).pipe(...);
 ```
 
+## Debugging
+
+Set a debug logger function to receive detailed debugging info about stream processing and events. For example:
+
+```javascript
+toolkit.setDebugLogger(console.log);
+```
+
+The function will receive one argument: a string to log.
+
 ## License
 
 Apache 2 (open-source) license, included in 'LICENSE.txt'.
