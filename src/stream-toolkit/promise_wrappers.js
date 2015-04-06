@@ -1,6 +1,12 @@
 const Promise = require("bluebird");
 const util = require("util");
 
+var debugLogger = null;
+
+function setDebugLogger(logger) {
+  debugLogger = logger;
+}
+
 // add several related one-shot event handlers to an object.
 // if any of these handlers is triggered, all of them are removed.
 function handleOneShots(obj, handlers) {
@@ -10,6 +16,7 @@ function handleOneShots(obj, handlers) {
   events.forEach((event) => {
     const f = handlers[event];
     wrappedHandlers[event] = (...x) => {
+      if (obj.__log) obj.__log("received event: " + event);
       removeWrappedHandlers();
       return f(...x);
     };
@@ -33,10 +40,10 @@ function handleOneShots(obj, handlers) {
  * f: (resolve, reject, onEvent) => <code>
  * onEvent(obj, eventName, handler)
  */
-function untilPromise(f) {
+function untilPromise(stream, f) {
   // some gymnastics here, so we can use the new "new Promise((resolve, reject))" API.
   const handlers = [];
-  function onEvent(obj, eventName, handler) {
+  const onEvent = (obj, eventName, handler) => {
     handlers.push({ obj, eventName, handler });
   }
 
@@ -45,7 +52,8 @@ function untilPromise(f) {
   });
 
   handlers.forEach(({ obj, eventName, handler }) => {
-    function h(...x) {
+    const h = (...x) => {
+      stream.__log("received event: " + eventName);
       obj.removeListener(eventName, h);
       return handler(...x);
     }
@@ -56,24 +64,45 @@ function untilPromise(f) {
   return promise;
 }
 
+let counter = 0;
+
 // add promise-based methods to a stream
-function promisify(stream) {
+function promisify(stream, options = {}) {
   // only bother to add the methods once. :)
   if (stream.endPromise) return stream;
 
+  counter += 1;
+  stream.__id = counter;
+  stream.__log = () => null;
+  stream.__debug = false;
+  if (debugLogger) {
+    if (options.name) {
+      stream.__name = options.name + "[" + stream.__id + "]";
+    } else {
+      stream.__name = "[stream " + stream.__id + "]";
+    }
+    stream.__log = (message) => debugLogger(stream.__name + " " + message);
+    stream.__debug = true;
+  }
+
   stream.endPromise = () => {
+    stream.__log("-> end?");
     // if the stream is already closed, we won't get another "end" event, so check the stream's state.
-    if (stream._readableState && stream._readableState.endEmitted) return Promise.resolve();
-    return untilPromise((resolve, reject, onEvent) => {
+    if (stream._readableState && (stream._readableState.endEmitted || stream._readableState.ended)) {
+      stream.__log("<- end!");
+      return Promise.resolve();
+    }
+    return untilPromise(stream, (resolve, reject, onEvent) => {
       onEvent(stream, "error", reject);
       onEvent(stream, "end", resolve);
     });
   };
 
   stream.finishPromise = () => {
+    stream.__log("-> finish?");
     // if the stream is already closed, we won't get another "finish" event, so check the stream's state.
     if (stream._writableState && stream._writableState.finished) return Promise.resolve();
-    return untilPromise((resolve, reject, onEvent) => {
+    return untilPromise(stream, (resolve, reject, onEvent) => {
       onEvent(stream, "error", reject);
       onEvent(stream, "finish", resolve);
     });
@@ -81,10 +110,24 @@ function promisify(stream) {
 
   // turn a stream.read(N) into a function that returns a promise.
   stream.readPromise = (count) => {
+    stream.__log("read(" + count + ")");
     if (count == 0) return Promise.resolve(new Buffer(0));
     const rv = stream.read(count);
+    if (rv != null) {
+      if (stream.__debug) {
+        var dump = (rv instanceof Buffer) ? util.inspect(rv) : rv.toString();
+        // rageface!
+        if (dump == "[object Object]") dump = "[object: " + rv.constructor.name + "]";
+        stream.__log("read: " + dump);
+      }
+      return Promise.resolve(rv);
+    }
     // if the stream is closed, we won't get another "end" event, so check the stream's state.
-    if (rv != null || (stream._readableState && stream._readableState.endEmitted)) return Promise.resolve(rv);
+    // node 10 uses "endEmitted"; io.js uses "ended".
+    if (stream._readableState && (stream._readableState.endEmitted || stream._readableState.ended)) {
+      stream.__log("read: ended");
+      return Promise.resolve(rv);
+    }
 
     const deferred = Promise.defer();
     handleOneShots(stream, {
@@ -107,3 +150,4 @@ function promisify(stream) {
 
 
 exports.promisify = promisify;
+exports.setDebugLogger = setDebugLogger;

@@ -18,5 +18,6 @@ exports.countingStream = counting_stream.countingStream;
 exports.limitStream = limit_stream.limitStream;
 
 exports.promisify = promise_wrappers.promisify;
+exports.setDebugLogger = promise_wrappers.setDebugLogger;
 
 exports.weld = weld.weld;
