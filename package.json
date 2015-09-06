@@ -19,6 +19,7 @@
     }
   ],
   "scripts": {
+    "build": "npm run prepublish",
     "clean": "rm -rf lib test/lib",
     "distclean": "npm run clean && rm -rf node_modules",
     "prepublish": "babel --source-maps --out-dir lib src && babel --source-maps --out-dir test/lib test/src",

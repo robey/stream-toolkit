@@ -15,11 +15,12 @@ class CountingStream extends stream.Transform {
       this.bytes += buffer.length;
     }
     this.emit("count", this.bytes);
-    this.push(buffer)
+    this.push(buffer);
     callback();
   }
 
   _flush(callback) {
+    this.push(null);
     callback();
   }
 
