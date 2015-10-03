@@ -403,18 +403,18 @@ describe("Transform", () => {
       ended = true;
     });
 
-    return Promise.all(objects.map(obj => {
+    return Promise.all(Promise.map(objects, obj => {
       jp.write(JSON.stringify(obj));
-      return Promise.delay(10).then(() => {
+      return Promise.delay(1).then(() => {
         jp.read().should.eql(obj);
       });
-    })).then(() => {
+    }, { concurrency: 1 })).then(() => {
       jp.end();
-      return Promise.delay(10);
+      return Promise.delay(1);
     }).then(() => {
       // read one more time to get the 'end' event
       jp.read();
-      return Promise.delay(10);
+      return Promise.delay(1);
     }).then(() => {
       ended.should.eql(true);
     });
@@ -442,18 +442,18 @@ describe("Transform", () => {
       ended = true;
     });
 
-    return Promise.all(objects.map(obj => {
+    return Promise.all(Promise.map(objects, obj => {
       js.write(obj);
-      return Promise.delay(10).then(() => {
+      return Promise.delay(1).then(() => {
         js.read().should.eql(JSON.stringify(obj));
       });
-    })).then(() => {
+    }, { concurrency: 1 })).then(() => {
       js.end();
-      return Promise.delay(10);
+      return Promise.delay(1);
     }).then(() => {
       // read one more time to get the 'end' event
       js.read();
-      return Promise.delay(10);
+      return Promise.delay(1);
     }).then(() => {
       ended.should.eql(true);
     });
