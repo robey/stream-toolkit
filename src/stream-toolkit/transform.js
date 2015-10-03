@@ -26,8 +26,6 @@ export class Transform extends Duplex {
   constructor(options = {}) {
     super(options);
 
-    this._debug = options.debug;
-
     this._transform = options.transform || (() => {
       throw new Error("not implemented");
     });
@@ -39,8 +37,6 @@ export class Transform extends Duplex {
     this._nextCallback = null;
 
     this.once("prefinish", () => {
-      if (this._debug) console.log(this._debug + ": prefinish");
-
       Promise.try(() => this._flush()).then(() => {
         this.push(null);
       }, error => this.emit('error', error));
@@ -48,7 +44,6 @@ export class Transform extends Duplex {
   }
 
   _write(chunk, encoding, callback) {
-    if (this._debug) console.log(this._debug + ": write", chunk);
     this._nextChunk = chunk;
     this._nextCallback = callback;
     if (this._state == FLOWING) this._next();
@@ -62,7 +57,6 @@ export class Transform extends Duplex {
     this._nextChunk = null;
     this._nextCallback = null;
 
-    if (this._debug) console.log(this._debug + ": transform", chunk);
     Promise.try(() => this._transform(chunk)).then(data => {
       if (data != null) this.push(data);
       callback();
@@ -70,15 +64,12 @@ export class Transform extends Duplex {
   }
 
   _read() {
-    if (this._debug) console.log(this._debug + ": read trigger; flow!");
     this._state = FLOWING;
     this._next();
   }
 
   push(data) {
-    if (this._debug) console.log(this._debug + ": push", data);
     if (super.push(data)) return;
-    if (this._debug) console.log(this._debug + ": stop!");
     this._state = STOPPED;
   }
 }
