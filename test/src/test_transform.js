@@ -458,4 +458,90 @@ describe("Transform", () => {
       ended.should.eql(true);
     });
   }));
+
+  // a note from the editor: i understand the purpose of this test even less
+  // than the others, but it's from the node.js test suite, so here it is.
+  it("big packet", future(() => {
+    let passed = false;
+
+    const s1 = new Transform({ transform: chunk => chunk });
+    const s2 = new Transform({ transform: chunk => chunk });
+    const s3 = new Transform({
+      transform: chunk => {
+        if (!passed) {
+          // Char 'a' only exists in the last write
+          passed = chunk.toString().indexOf('a') >= 0;
+        }
+      }
+    });
+
+    s1.pipe(s3);
+    // Don't let s2 auto close which may close s3
+    s2.pipe(s3, { end: false });
+
+    // We must write a buffer larger than highWaterMark
+    var big = new Buffer(s1._writableState.highWaterMark + 1);
+    big.fill('x');
+
+    // Since big is larger than highWaterMark, it will be buffered internally.
+    s1.write(big).should.eql(false);
+    // 'tiny' is small enough to pass through internal buffer.
+    s2.write('tiny').should.eql(true);
+
+    // Write some small data in next IO loop, which will never be written to s3
+    // Because 'drain' event is not emitted from s1 and s1 is still paused
+    setImmediate(s1.write.bind(s1), 'later');
+
+    return Promise.delay(10).then(() => {
+      passed.should.eql(true);
+    });
+  }));
+
+  describe("split objectMode", () => {
+    it("readableObjectMode", future(() => {
+      const parser = new Transform({
+        readableObjectMode: true,
+        transform: chunk => ({ val: chunk[0] })
+      });
+
+      parser._readableState.objectMode.should.eql(true);
+      parser._writableState.objectMode.should.eql(false);
+      parser._readableState.highWaterMark.should.eql(16);
+      parser._writableState.highWaterMark.should.eql(16 * 1024);
+
+      let parsed = null;
+      parser.on("data", obj => {
+        parsed = obj;
+      });
+
+      parser.end(new Buffer([42]));
+
+      return Promise.delay(10).then(() => {
+        parsed.val.should.eql(42);
+      });
+    }));
+
+    it("writableObjectMode", future(() => {
+      const serializer = new Transform({
+        writableObjectMode: true,
+        transform: obj => new Buffer([ obj.val ])
+      });
+
+      serializer._readableState.objectMode.should.eql(false);
+      serializer._writableState.objectMode.should.eql(true);
+      serializer._readableState.highWaterMark.should.eql(16 * 1024);
+      serializer._writableState.highWaterMark.should.eql(16);
+
+      let serialized = null;
+      serializer.on("data", chunk => {
+        serialized = chunk;
+      });
+
+      serializer.write({ val : 42 });
+
+      return Promise.delay(10).then(() => {
+        serialized[0].should.eql(42);
+      });
+    }));
+  });
 });
