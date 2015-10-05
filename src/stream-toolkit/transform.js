@@ -1,7 +1,3 @@
-/*
- * try to simplify stream.Transform, if possible.
- */
-
 "use strict";
 
 import Promise from "bluebird";
@@ -17,6 +13,18 @@ import { Duplex } from "stream";
 const FLOWING = 0;
 const STOPPED = 1;
 
+/*
+ * Transform from the nodejs "stream" library, with the following changes:
+ * - simplified implementation using ES6
+ * - `transform` and `flush` functions must be passed in options (not
+ *   overridden)
+ * - `transform` and `flush` functions return a Promise instead of calling a
+ *   callback
+ *
+ * The last point has the side effect of running pending buffer operations
+ * on the next event loop tick instead of immediately. This may be considered
+ * a benefit or disadvantage, depending on your personal perspective.
+ */
 export class Transform extends Duplex {
   /*
    * options:
