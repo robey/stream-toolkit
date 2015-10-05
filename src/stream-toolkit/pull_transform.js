@@ -13,9 +13,56 @@ import { Duplex } from "stream";
 const FLOWING = 0;
 const STOPPED = 1;
 
+/*
+ * PullTransform is similar to Transform, but instead of transforming data
+ * as it arrives (and being responsible for your own buffering), the engine
+ * buffers for you, and you _pull_ data out of the buffer as you need it.
+ * Like Transform, PullTransform handles the flow control for you.
+ *
+ * To start, PullTransform calls the `transform` function and expects to
+ * receive a `Promise`. When the promise is fulfilled, if the incoming stream
+ * hasn't ended yet, `transform` is called again. This repeats until the
+ * incoming stream ends. After that, once the last `transform` promise has
+ * resolved, the outbound stream will be ended (by pushing `null`).
+ *
+ * If the promise resolves to a value (not null or undefined), PullTransform
+ * will push it to the outbound stream. You may also/instead call `push`
+ * directly, just like a normal Transform.
+ *
+ * To pull data from the incoming buffer, call:
+ * - `get(count): Promise`
+ *
+ * The PullTransform object is passed to `transform` to make it easier to
+ * call `get` on it.
+ *
+ * If the readable stream is in object mode, `count` is ignored, and each
+ * call returns a promise for one object. Otherwise, the promise will resolve
+ * to a `Buffer` of at least `count` bytes, once those bytes arrive.
+ *
+ * If the incoming stream ends before the requested `count` has arrived, the
+ * promise will resolve to the remaining bytes, or `null`.
+ *
+ * Here's an example of a PullTransform that reads (exactly) 16 bytes at a
+ * time, and converts each 16-byte "frame" into an object. Any truncated
+ * frame at the end is discarded.
+ *
+ *     const t = new PullTransform({
+ *       readableObjectMode: true,
+ *       transform: t => {
+ *         return t.get(16).then(data => {
+ *           // discard short frames.
+ *           if (!data || data.length < 16) return null;
+ *           return { frame: data };
+ *         });
+ *       },
+ *     });
+ */
 export class PullTransform extends Duplex {
   /*
    * options:
+   * - transform: `(PullTransform) => Promise()`
+   * - readableObjectMode (from Duplex)
+   * - writableObjectMode (from Duplex)
    */
   constructor(options = {}) {
     super(options);
