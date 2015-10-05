@@ -46,7 +46,7 @@ const STOPPED = 1;
  * time, and converts each 16-byte "frame" into an object. Any truncated
  * frame at the end is discarded.
  *
- *     const t = new PullTransform({
+ *     new PullTransform({
  *       readableObjectMode: true,
  *       transform: t => {
  *         return t.get(16).then(data => {
