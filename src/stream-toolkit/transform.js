@@ -25,7 +25,7 @@ const STOPPED = 1;
  * on the next event loop tick instead of immediately. This may be considered
  * a benefit or disadvantage, depending on your personal perspective.
  */
-export class Transform extends Duplex {
+export default class Transform extends Duplex {
   /*
    * options:
    * - transform: `(Buffer) => Promise(Buffer)`

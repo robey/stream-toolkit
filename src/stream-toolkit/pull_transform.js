@@ -57,7 +57,7 @@ const STOPPED = 1;
  *       },
  *     });
  */
-export class PullTransform extends Duplex {
+export default class PullTransform extends Duplex {
   /*
    * options:
    * - transform: `(PullTransform) => Promise()`
@@ -122,14 +122,14 @@ export class PullTransform extends Duplex {
       return;
     }
     this._transform(this).then(data => {
-      if (this._debug) console.log(this._debug, "transform got", data);
+      if (this._debug) console.log(this._debug, "transform got", (data instanceof Buffer ? data.length : "*"), data);
       if (data != null) this.push(data);
       this._pump();
     });
   }
 
   _write(chunk, encoding, callback) {
-    if (this._debug) console.log(this._debug, "write", chunk);
+    if (this._debug) console.log(this._debug, "write", (chunk instanceof Buffer ? chunk.length : "*"), chunk);
     this._buffers.push(chunk);
     this._bufferSize += this._writeObjects ? 1 : chunk.length;
     this._nextCallback = callback;
@@ -174,7 +174,7 @@ export class PullTransform extends Duplex {
   }
 
   _respondToGet(obj) {
-    if (this._debug) console.log(this._debug, "respondToGet", obj);
+    if (this._debug) console.log(this._debug, "respondToGet", (obj instanceof Buffer ? obj.length : "*"), obj);
     const resolve = this._getResolve;
     this._getCount = 0;
     this._getResolve = null;

@@ -1,7 +1,7 @@
 "use strict";
 
 import Promise from "bluebird";
-import { Transform } from "../../lib/stream-toolkit/transform";
+import Transform from "../../lib/stream-toolkit/transform";
 import { eventually, future } from "mocha-sprinkles";
 
 import "should";

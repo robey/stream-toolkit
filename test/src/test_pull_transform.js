@@ -3,7 +3,7 @@
 import Promise from "bluebird";
 import stream from "stream";
 import { promisify } from "../../lib/stream-toolkit/promise_wrappers";
-import { PullTransform } from "../../lib/stream-toolkit/pull_transform";
+import PullTransform from "../../lib/stream-toolkit/pull_transform";
 import { eventually, future } from "mocha-sprinkles";
 
 import "should";
