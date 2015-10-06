@@ -13,7 +13,7 @@ function handleOneShots(obj, handlers) {
   const wrappedHandlers = {};
   const events = Object.keys(handlers);
 
-  events.forEach((event) => {
+  events.forEach(event => {
     const f = handlers[event];
     wrappedHandlers[event] = (...x) => {
       if (obj.__log) obj.__log("received event: " + event);
@@ -23,10 +23,10 @@ function handleOneShots(obj, handlers) {
   });
 
   function removeWrappedHandlers() {
-    events.map((event) => obj.removeListener(event, wrappedHandlers[event]));
+    events.map(event => obj.removeListener(event, wrappedHandlers[event]));
   }
 
-  events.map((event) => obj.on(event, wrappedHandlers[event]));
+  events.map(event => obj.on(event, wrappedHandlers[event]));
 }
 
 /*
@@ -83,6 +83,7 @@ function promisify(stream, options = {}) {
     }
     stream.__log = (message) => debugLogger(stream.__name + " " + message);
     stream.__debug = true;
+    stream.__log("promisify.");
   }
 
   stream.endPromise = () => {
@@ -141,7 +142,7 @@ function promisify(stream, options = {}) {
   // turn stream.write(data) into a function that returns a promise.
   stream.writePromise = (data, encoding) => {
     return new Promise((resolve, reject) => {
-      stream.write(data, encoding, (error) => error ? reject(error) : resolve());
+      stream.write(data, encoding, error => error ? reject(error) : resolve());
     });
   };
 
