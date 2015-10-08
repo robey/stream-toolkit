@@ -253,4 +253,26 @@ describe("PullTransform", () => {
       (newStream == null).should.eql(true);
     });
   }));
+
+  it("unget", future(() => {
+    const t = new PullTransform({
+      transform: t => t.get(2).then(data => {
+        t.unget(new Buffer("xy"));
+        return t.get(2).then(data2 => {
+          return Buffer.concat([ data, data2 ]);
+        });
+      })
+    });
+    promisify(t);
+
+    t.write("cat");
+    t.end();
+
+    return t.readPromise(4).then(r1 => {
+      r1.toString().should.eql("caxy");
+      return t.readPromise(4).then(r2 => {
+        r2.toString().should.eql("txy");
+      });
+    });
+  }));
 });

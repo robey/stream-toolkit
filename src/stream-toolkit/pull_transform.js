@@ -114,6 +114,14 @@ export default class PullTransform extends Duplex {
     });
   }
 
+  /*
+   * Push data back upstream, like Readable's `unshift`.
+   */
+  unget(data) {
+    this._buffers.unshift(data);
+    this._bufferSize += this._writeObjects ? 1 : data.length;
+  }
+
   _pump() {
     if (this._debug) console.log(this._debug, "pump loop");
     if (this._ended) {
@@ -125,6 +133,8 @@ export default class PullTransform extends Duplex {
       if (this._debug) console.log(this._debug, "transform got", (data instanceof Buffer ? data.length : "*"), data);
       if (data != null) this.push(data);
       this._pump();
+    }, error => {
+      this.emit("error", error);
     });
   }
 
