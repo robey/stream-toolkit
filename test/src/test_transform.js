@@ -1,6 +1,7 @@
 "use strict";
 
 import Promise from "bluebird";
+import { promisify } from "../../lib/stream-toolkit/promise_wrappers";
 import Transform from "../../lib/stream-toolkit/transform";
 import { eventually, future } from "mocha-sprinkles";
 
@@ -544,4 +545,23 @@ describe("Transform", () => {
       });
     }));
   });
+
+  it("flush test (added by robey)", future(() => {
+    const pt = new Transform({
+      transform: chunk => chunk.slice(0, 2),
+      flush: () => {
+        pt.push(new Buffer("cat"));
+      }
+    });
+    promisify(pt);
+
+    pt.write(new Buffer('aaaa'));
+    pt.write(new Buffer('bbbb'));
+    pt.write(new Buffer('cccc'));
+    pt.end();
+
+    return pt.readPromise(9).then(data => {
+      data.toString().should.eql("aabbcccat");
+    });
+  }));
 });
