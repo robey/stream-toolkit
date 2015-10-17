@@ -1,72 +1,75 @@
-const Promise = require("bluebird");
-const promise_wrappers = require("./promise_wrappers");
-const stream = require("stream");
-const util = require("util");
+"use strict";
+
+import Promise from "bluebird";
+import { Duplex } from "stream";
+import { promisify } from "./promise_wrappers";
 
 /*
  * Readable stream composed from a series of smaller streams.
- * Generator is a function that returns each new stream in sequence, either
- * directly or as a promise. When it returns null, the compound stream ends
- * too. (Generator may also be an array, if you have a set of streams already.)
+ * This is a sort of meta-transform that accepts streams on the write side,
+ * and emits their contents on the read side, packed end to end.
+ *
+ * For example:
+ *
+ *     const compound = compoundStream();
+ *     const source = sourceStream(new Buffer("hello"));
+ *     compound.write(source);
+ *     compound.end();
+ *     compound.read();  // "hello"
  */
-class CompoundStream extends stream.Readable {
-  constructor(generator) {
-    super();
-    this.generator = generator;
-    this.closed = false;
-    this.ready = false;
-    this.queue = [];
-    this.stream = null;
-    this._next();
-  }
+class CompoundStream extends Duplex {
+  constructor() {
+    super({ writableObjectMode: true });
 
-  _next() {
-    Promise.resolve(Array.isArray(this.generator) ? this.generator.shift() : this.generator()).then((s) => {
-      if (!s) return this._done();
-      this.stream = s;
-      s.on("readable", () => this._readable());
-      s.on("end", () => this._next());
-      s.on("error", (err) => this.emit("error", err));
-      this._readable();
-    }).catch((error) => {
-      this.emit("error", err);
+    this._stream = null;
+
+    this.once("prefinish", () => {
+      this._queue.push(null);
+      this._closed = true;
+      this._drain();
     });
+
+    this._closed = false;
+    this._ready = false;
+    this._queue = [];
   }
 
-  _readable() {
-    if (!this.ready || this.closed || !this.stream) return;
-    const chunk = this.stream.read();
-    if (!chunk) return;
-    this.queue.push(chunk);
+  _write(stream, encoding, callback) {
+    this._stream = stream;
+
+    stream.on("end", () => {
+      this._stream = null;
+      callback();
+    });
+    stream.on("error", error => this.emit("error", error));
+    stream.on("readable", () => this._readable());
+  }
+
+  _read() {
+    this._ready = true;
     this._drain();
   }
 
-  // push out any data we have buffered up.
-  // node uses this as the "unpause" signal. the "pause" signal is returning false from a push().
-  _read(n) {
-    this.ready = true;
+  // ----- internal
+
+  _readable() {
+    if (!this._ready || this._closed || !this._stream) return;
+    const chunk = this._stream.read();
+    if (!chunk) return;
+    this._queue.push(chunk);
     this._drain();
   }
 
   _drain() {
-    while (this.ready && this.queue.length > 0) {
-      this.ready = this.push(this.queue.shift());
+    while (this._ready && this._queue.length > 0) {
+      this._ready = this.push(this._queue.shift());
     }
     // if the consumer is still hungry for more, see if a read() will pull out any more
-    if (this.ready) this._readable();
-  }
-
-  _done() {
-    this.queue.push(null);
-    this.closed = true;
-    this._drain();
+    if (this._ready) this._readable();
   }
 }
 
 
-function compoundStream(generator) {
-  return promise_wrappers.promisify(new CompoundStream(generator));
+export default function compoundStream(generator) {
+  return promisify(new CompoundStream(generator));
 }
-
-
-exports.compoundStream = compoundStream;
