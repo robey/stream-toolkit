@@ -2,22 +2,17 @@
   "name": "stream-toolkit",
   "version": "2.1.0",
   "description": "handy tools for working with streams",
+  "author": "Robey Pointer <robeypointer@gmail.com>",
+  "license": "Apache-2.0",
   "main": "./lib/stream-toolkit",
   "keywords": [
     "streams"
   ],
-  "author": "Robey Pointer <robeypointer@gmail.com>",
   "homepage": "https://github.com/robey/stream-toolkit",
   "repository": {
     "type": "git",
     "url": "git://github.com/robey/stream-toolkit.git"
   },
-  "licenses": [
-    {
-      "type": "Apache License 2.0",
-      "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
-    }
-  ],
   "scripts": {
     "build": "npm run prepublish",
     "clean": "rm -rf lib test/lib",
@@ -36,7 +31,6 @@
     "source-map-support": "*"
   },
   "files": [
-    "build.plz",
     "lib",
     "test"
   ]
