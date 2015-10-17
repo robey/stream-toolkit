@@ -1,16 +1,18 @@
-const mocha_sprinkles = require("mocha-sprinkles");
-const Promise = require("bluebird");
-const stream = require("stream");
-const toolkit = require("../../lib/stream-toolkit");
-const util = require("util");
+"use strict";
 
-const future = mocha_sprinkles.future;
+import Promise from "bluebird";
+import stream from "stream";
+import { limitStream, sinkStream, sourceStream } from "../../lib/stream-toolkit";
+import { future } from "mocha-sprinkles";
+
+import "source-map-support/register";
+
 
 describe("LimitStream", () => {
   it("stops before the end", (done) => {
-    const sink = toolkit.sinkStream();
-    const source = toolkit.sourceStream("hello sailor");
-    const s = toolkit.limitStream(source, 10);
+    const sink = sinkStream();
+    const source = sourceStream("hello sailor");
+    const s = limitStream(source, 10);
     s.pipe(sink);
     sink.on("finish", () => {
       sink.getBuffer().toString().should.eql("hello sail");
@@ -21,9 +23,9 @@ describe("LimitStream", () => {
   });
 
   it("notices if there's not enough data", (done) => {
-    const sink = toolkit.sinkStream();
-    const source = toolkit.sourceStream("hello");
-    const s = toolkit.limitStream(source, 10);
+    const sink = sinkStream();
+    const source = sourceStream("hello");
+    const s = limitStream(source, 10);
     s.pipe(sink);
     sink.on("finish", () => {
       sink.getBuffer().toString().should.eql("hello");
@@ -34,10 +36,10 @@ describe("LimitStream", () => {
   });
 
   it("reacts correctly to slow data", future(() => {
-    const sink = toolkit.sinkStream();
+    const sink = sinkStream();
     const source = new stream.Readable();
     source._read = () => null;
-    const s = toolkit.limitStream(source, 10);
+    const s = limitStream(source, 10);
     s.pipe(sink);
     return new Promise((resolve, reject) => {
       sink.on("finish", () => {
@@ -56,13 +58,13 @@ describe("LimitStream", () => {
   }));
 
   it("can be chained", (done) => {
-    const sink1 = toolkit.sinkStream();
-    const source = toolkit.sourceStream("hello sailor!");
-    const s = toolkit.limitStream(source, 4);
+    const sink1 = sinkStream();
+    const source = sourceStream("hello sailor!");
+    const s = limitStream(source, 4);
     s.pipe(sink1);
     sink1.on("finish", () => {
-      const sink2 = toolkit.sinkStream();
-      const s = toolkit.limitStream(source, 4);
+      const sink2 = sinkStream();
+      const s = limitStream(source, 4);
       s.pipe(sink2);
       sink2.on("finish", () => {
         sink1.getBuffer().toString().should.eql("hell");
@@ -74,11 +76,11 @@ describe("LimitStream", () => {
   });
 
   it("can be nested", (done) => {
-    const sink = toolkit.sinkStream();
-    const source = toolkit.sourceStream("hello sailor!");
-    const s1 = toolkit.limitStream(source, 10);
+    const sink = sinkStream();
+    const source = sourceStream("hello sailor!");
+    const s1 = limitStream(source, 10);
     s1.read(2).toString().should.eql("he");
-    const s2 = toolkit.limitStream(s1, 5);
+    const s2 = limitStream(s1, 5);
     s2.pipe(sink);
     sink.on("finish", () => {
       sink.getBuffer().toString().should.eql("llo s");
@@ -88,9 +90,9 @@ describe("LimitStream", () => {
   });
 
   it("handles the stupid 0-length case", (done) => {
-    const sink = toolkit.sinkStream();
-    const source = toolkit.sourceStream("hello sailor!");
-    const s = toolkit.limitStream(source, 0);
+    const sink = sinkStream();
+    const source = sourceStream("hello sailor!");
+    const s = limitStream(source, 0);
     s.pipe(sink);
     sink.on("finish", () => {
       sink.getBuffer().toString().should.eql("");

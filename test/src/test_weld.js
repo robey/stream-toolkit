@@ -1,9 +1,9 @@
-const mocha_sprinkles = require("mocha-sprinkles");
-const stream = require("stream");
-const toolkit = require("../../lib/stream-toolkit");
-const util = require("util");
+"use strict";
 
-const future = mocha_sprinkles.future;
+import stream from "stream";
+import { inject, pipeToBuffer, setDebugLogger, sourceStream, Transform, weld } from "../../lib/stream-toolkit";
+import { future } from "mocha-sprinkles";
+
 
 const capitalizer = new stream.Transform();
 capitalizer._transform = (data, _, callback) => {
@@ -30,10 +30,10 @@ suffixer._flush = (callback) => {
 
 describe("weld", () => {
   it("welds a few streams together", future(() => {
-    const source = toolkit.sourceStream("hello sailor!");
-    const s = toolkit.weld(capitalizer, prefixer, suffixer);
+    const source = sourceStream("hello sailor!");
+    const s = weld(capitalizer, prefixer, suffixer);
     source.pipe(s);
-    return toolkit.pipeToBuffer(s).then((buffer) => {
+    return pipeToBuffer(s).then((buffer) => {
       buffer.toString().should.eql("<<HELLO SAILOR!>>");
     });
   }));

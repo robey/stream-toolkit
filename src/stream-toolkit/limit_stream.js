@@ -1,6 +1,8 @@
-const promise_wrappers = require("./promise_wrappers");
-const stream = require("stream");
-const util = require("util");
+"use strict";
+
+import stream from "stream";
+import { promisify } from "./promise_wrappers";
+
 
 // Readable stream that wraps another, with a size limit.
 class LimitStream extends stream.Readable {
@@ -67,14 +69,11 @@ class LimitStream extends stream.Readable {
   }
 
   toString() {
-    return `LimitStream(ready=${this.ready}, queue=${util.inspect(this.queue)}, size=${this.size}, stream=${this.stream.toString()})`;
+    return `LimitStream(ready=${this.ready}, queue=${this.queue.length}, size=${this.size}, stream=${this.stream.toString()})`;
   }
 }
 
 
-function limitStream(stream, size) {
-  return promise_wrappers.promisify(new LimitStream(stream, size));
+export default function limitStream(stream, size) {
+  return promisify(new LimitStream(stream, size));
 }
-
-
-exports.limitStream = limitStream;

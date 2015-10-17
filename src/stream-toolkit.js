@@ -1,23 +1,33 @@
-const buffer_streams = require("./stream-toolkit/buffer_streams");
-const compound_stream = require("./stream-toolkit/compound_stream");
-const counting_stream = require("./stream-toolkit/counting_stream");
-const limit_stream = require("./stream-toolkit/limit_stream");
-const promise_wrappers = require("./stream-toolkit/promise_wrappers");
-const weld = require("./stream-toolkit/weld");
+"use strict";
 
-exports.nullSinkStream = buffer_streams.nullSinkStream;
-exports.sinkStream = buffer_streams.sinkStream;
-exports.pipeFromBuffer = buffer_streams.pipeFromBuffer;
-exports.pipeToBuffer = buffer_streams.pipeToBuffer;
-exports.sourceStream = buffer_streams.sourceStream;
+import {
+  nullSinkStream,
+  pipeFromBuffer,
+  pipeToBuffer,
+  sinkStream,
+  sourceStream
+} from "./stream-toolkit/buffer_streams";
+import compoundStream from "./stream-toolkit/compound_stream";
+import countingStream from "./stream-toolkit/counting_stream";
+import limitStream from "./stream-toolkit/limit_stream";
+import { promisify, setDebugLogger } from "./stream-toolkit/promise_wrappers";
+import PullTransform from "./stream-toolkit/pull_transform";
+import Transform from "./stream-toolkit/transform";
+import { inject, weld } from "./stream-toolkit/weld";
 
-exports.compoundStream = compound_stream.compoundStream
-
-exports.countingStream = counting_stream.countingStream;
-
-exports.limitStream = limit_stream.limitStream;
-
-exports.promisify = promise_wrappers.promisify;
-exports.setDebugLogger = promise_wrappers.setDebugLogger;
-
-exports.weld = weld.weld;
+export {
+  compoundStream,
+  countingStream,
+  inject,
+  limitStream,
+  nullSinkStream,
+  pipeFromBuffer,
+  pipeToBuffer,
+  promisify,
+  PullTransform,
+  setDebugLogger,
+  sinkStream,
+  sourceStream,
+  Transform,
+  weld
+};

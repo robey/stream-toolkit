@@ -1,6 +1,8 @@
-const promise_wrappers = require("./promise_wrappers");
-const stream = require("stream");
-const util = require("util");
+"use strict";
+
+import stream from "stream";
+import { promisify } from "./promise_wrappers";
+
 
 // transform for buffer streams that counts how many bytes came through.
 class CountingStream extends stream.Transform {
@@ -30,9 +32,6 @@ class CountingStream extends stream.Transform {
 }
 
 
-function countingStream(options = {}) {
-  return promise_wrappers.promisify(new CountingStream(options));
+export default function countingStream(options = {}) {
+  return promisify(new CountingStream(options));
 }
-
-
-exports.countingStream = countingStream;

@@ -1,15 +1,17 @@
-const mocha_sprinkles = require("mocha-sprinkles");
-const stream = require("stream");
-const toolkit = require("../../lib/stream-toolkit");
-const util = require("util");
+"use strict";
 
-const future = mocha_sprinkles.future;
+import stream from "stream";
+import { countingStream, sinkStream } from "../../lib/stream-toolkit";
+import { future } from "mocha-sprinkles";
+
+import "source-map-support/register";
+
 
 describe("CountingStream", () => {
   it("counts", (done) => {
-    const sink = toolkit.sinkStream();
+    const sink = sinkStream();
     const source = new stream.PassThrough();
-    const counter = toolkit.countingStream();
+    const counter = countingStream();
     source.pipe(counter);
     counter.pipe(sink);
     const bytes = [];
