@@ -2,6 +2,7 @@
 
 import Promise from "bluebird";
 import { Duplex } from "stream";
+import { promisify } from "./promise_wrappers";
 
 /*
  * The transformer can be in two states:
@@ -67,6 +68,9 @@ export default class PullTransform extends Duplex {
   constructor(options = {}) {
     super(options);
 
+    // might be a child of another PullTransform
+    if (options.parent) this._parent = options.parent;
+
     this._writeObjects = options.writableObjectMode;
     this._debug = options.debug;
     this._transform = options.transform || (() => {
@@ -90,9 +94,16 @@ export default class PullTransform extends Duplex {
       // tell the pump to wrap it up.
       if (this._debug) console.log(this._debug, "prefinish");
       this._ended = true;
-      this._next();
+      if (this._parent) {
+        // undo any `_stop` signal from downstream.
+        if (this._state == STOPPED) this._parent._read();
+      } else {
+        this._next();
+      }
     });
 
+    if (!options.name) options.name = "PullTransform";
+    promisify(this, options);
     this._pump();
   }
 
@@ -105,6 +116,9 @@ export default class PullTransform extends Duplex {
    * call's Promise completes.
    */
   get(count) {
+    if (this._debug) console.log(this._debug, "get", count, "bufferSize", this._bufferSize);
+    if (this._parent) return this._parent.get(count);
+
     this._getCount = count;
     if (this._writeObjects) this._getCount = 1;
 
@@ -118,8 +132,33 @@ export default class PullTransform extends Duplex {
    * Push data back upstream, like Readable's `unshift`.
    */
   unget(data) {
+    if (this._parent) return this._parent.unget(data);
+
     this._buffers.unshift(data);
     this._bufferSize += this._writeObjects ? 1 : data.length;
+  }
+
+  /*
+   * Attach another `PullTransform` downstream of this one, like `pipe` but
+   * with optmiziations. `get` and `unget` will be wired through, as well as
+   * the flow-control signals from downstream. The attached transform can
+   * receive (pull) data until it decides to stop, after which this stream
+   * can resume being pulled from, or may have another `PullTransform`
+   * attached. This allows you to segment the stream.
+   *
+   * You should not call `get` on this `PullTransform` again until the child
+   * has ended.
+   */
+  subpipe(other) {
+    if (other instanceof PullTransform) {
+      other._parent = this;
+      // child's 'end' signal will push a STOP back to us. undo that.
+      other.on("end", () => this._read());
+      other._next();
+      return other;
+    }
+
+    return super.pipe(other);
   }
 
   _pump() {
@@ -138,6 +177,7 @@ export default class PullTransform extends Duplex {
     });
   }
 
+  // never called in child mode.
   _write(chunk, encoding, callback) {
     if (this._debug) console.log(this._debug, "write", (chunk instanceof Buffer ? chunk.length : "*"), chunk);
     this._buffers.push(chunk);
@@ -149,6 +189,13 @@ export default class PullTransform extends Duplex {
   _next() {
     if (this._debug) console.log(this._debug, "next");
     if (!this._getResolve) return;
+
+    // we get here if the transform was started before we were attached to a subpipe.
+    if (this._parent) {
+      return this._parent.get(this._getCount).then(data => {
+        return this._respondToGet(data);
+      });
+    }
 
     // do we have enough data to fill a current `get`?
     if (this._getCount > this._bufferSize && !this._ended) {
@@ -194,15 +241,27 @@ export default class PullTransform extends Duplex {
   _read() {
     if (this._debug) console.log(this._debug, "read");
     this._state = FLOWING;
-    this._next();
+    if (this._parent) {
+      this._parent._read();
+    } else {
+      this._next();
+    }
   }
 
   _stop() {
+    if (this._debug) console.log(this._debug, "stop");
     this._state = STOPPED;
+    if (this._parent) this._parent._stop();
   }
 
   push(data) {
     if (this._debug) console.log(this._debug, "push", data);
+    if (data == null) {
+      this._ended = true;
+      if (this._pushedNull) return;
+      this._pushedNull = true;
+    }
+
     try {
       if (super.push(data)) return;
     } catch (error) {

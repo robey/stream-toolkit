@@ -2,6 +2,7 @@
 
 import Promise from "bluebird";
 import { Duplex } from "stream";
+import { promisify } from "./promise_wrappers";
 
 /*
  * The transformer can be in two states:
@@ -45,10 +46,14 @@ export default class Transform extends Duplex {
     this._nextCallback = null;
 
     this.once("prefinish", () => {
-      Promise.try(() => this._flush()).then(() => {
+      Promise.try(() => this._flush()).then(buffer => {
+        if (buffer) this.push(buffer);
         this.push(null);
       }, error => this.emit('error', error));
     });
+
+    if (!options.name) options.name = "Transform";
+    promisify(this, options);
   }
 
   _write(chunk, encoding, callback) {
