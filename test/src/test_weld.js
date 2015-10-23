@@ -5,36 +5,50 @@ import { inject, pipeToBuffer, setDebugLogger, sourceStream, Transform, weld } f
 import { future } from "mocha-sprinkles";
 
 
-const capitalizer = new stream.Transform();
-capitalizer._transform = (data, _, callback) => {
-  capitalizer.push(new Buffer(data.toString().toUpperCase()));
-  callback();
-};
+function capitalizer() {
+  return new Transform({
+    transform: data => new Buffer(data.toString().toUpperCase())
+  });
+}
 
-const prefixer = new stream.Transform();
-prefixer._transform = (data, _, callback) => {
-  prefixer.push(data);
-  callback();
-};
-prefixer.push(new Buffer("<<"));
+function prefixer() {
+  const rv = new Transform({
+    transform: data => data
+  });
+  rv.push(new Buffer("<<"));
+  return rv;
+}
 
-const suffixer = new stream.Transform();
-suffixer._transform = (data, _, callback) => {
-  suffixer.push(data);
-  callback();
-};
-suffixer._flush = (callback) => {
-  suffixer.push(new Buffer(">>"));
-  callback();
-};
+function suffixer() {
+  return new Transform({
+    transform: data => data,
+    flush: () => new Buffer(">>")
+  });
+}
+
+function dumper() {
+  return new Transform({
+    transform: obj => new Buffer(obj.value),
+    writableObjectMode: true
+  });
+}
 
 describe("weld", () => {
   it("welds a few streams together", future(() => {
     const source = sourceStream("hello sailor!");
-    const s = weld(capitalizer, prefixer, suffixer);
+    const s = weld(capitalizer(), prefixer(), suffixer());
     source.pipe(s);
-    return pipeToBuffer(s).then((buffer) => {
+    return pipeToBuffer(s).then(buffer => {
       buffer.toString().should.eql("<<HELLO SAILOR!>>");
     });
   }));
+
+  it("can do objects", future(() => {
+    const s = weld(dumper(), prefixer(), { writableObjectMode: true });
+    s.write({ value: "hello" });
+    s.end();
+    return pipeToBuffer(s).then(buffer => {
+      buffer.toString().should.eql("<<hello");
+    });
+  }))
 });
