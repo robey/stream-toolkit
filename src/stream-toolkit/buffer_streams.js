@@ -1,85 +1,115 @@
-const promise_wrappers = require("./promise_wrappers");
+"use strict";
+
 const stream = require("stream");
+import Transform from "./transform";
+import { promisify } from "./promise_wrappers";
 
-// simple writable stream that collects all incoming data and provides it in a single (combined) buffer.
-class SinkStream extends stream.Writable {
-  constructor(options = {}) {
-    super(options);
-    this.buffers = [];
-  }
+const DEFAULT_BLOCK_SIZE = Math.pow(2, 20);  // 1MB
 
-  _write(chunk, encoding, callback) {
-    this.buffers.push(chunk);
-    callback();
-  }
+/*
+ * Stream transform that buffers data until it reaches a desired block size,
+ * then emits a single block.
+ *
+ * options:
+ * - blockSize: default is 1MB
+ * - exact: (boolean) slice blocks so that when at least `blockSize` bytes
+ *   are available, emit a block of _exactly_ `blockSize` bytes (default:
+ *   false)
+ */
+export function bufferStream(inOptions = {}) {
+  const blockSize = inOptions.blockSize || DEFAULT_BLOCK_SIZE;
+  const exact = inOptions.exact;
 
-  // combine all received data into a buffer and return it. may be called multiple times.
-  getBuffer() {
-    return Buffer.concat(this.buffers);
-  }
+  let queue = [];
+  let size = 0;
 
-  // clear all received data so far.
-  reset() {
-    this.buffers = [];
-  }
+  const options = {
+    name: "bufferingStream(" + blockSize + ")",
+    transform: data => {
+      queue.push(data);
+      size += data.length;
+      if (size >= blockSize) drain(exact);
+    },
+    flush: () => {
+      drain(exact);
+      if (size > 0) drain(false);
+    }
+  };
+  for (const k in inOptions) options[k] = inOptions[k];
+
+  const drain = exact => {
+    if (size == 0) return;
+    let buffer = Buffer.concat(queue, size);
+    queue = [];
+    size = 0;
+
+    if (exact) {
+      while (buffer.length >= blockSize) {
+        rv.push(buffer.slice(0, blockSize));
+        buffer = buffer.slice(blockSize);
+      }
+      queue.push(buffer);
+      size = buffer.length;
+    } else {
+      rv.push(buffer);
+    }
+  };
+
+  const rv = new Transform(options);
+  return rv;
 }
 
 
-// writable stream that drains a readable by throwing away all the data.
-class NullSinkStream extends stream.Writable {
-  constructor(options = {}) {
-    super(options);
-  }
+// ----- various ways of putting a buffer on the read or write side:
 
-  _write(chunk, encoding, callback) {
-    callback();
-  }
+export function sinkStream(inOptions) {
+  const buffers = [];
+  const options = {
+    name: "sinkStream",
+    write: (chunk, encoding, callback) => {
+      buffers.push(chunk);
+      callback();
+    }
+  };
+  for (const k in inOptions) options[k] = inOptions[k];
+  const rv = promisify(new stream.Writable(options), options);
+  rv.getBuffer = () => Buffer.concat(buffers);
+  rv.reset = () => buffers.splice(0, buffers.length);
+  return rv;
 }
 
-
-// feed a readable stream from a single buffer.
-class SourceStream extends stream.Readable {
-  constructor(buffer, options = {}) {
-    super(options);
-    this.buffer = buffer;
-  }
-
-  _read(size) {
-    this.push(this.buffer);
-    this.push(null);
-  }
+export function nullSinkStream(inOptions) {
+  const options = {
+    name: "nullSinkStream",
+    write: (chunk, encoding, callback) => callback()
+  };
+  for (const k in inOptions) options[k] = inOptions[k];
+  return promisify(new stream.Writable(options), options);
 }
 
-
-function sinkStream(options) {
-  return promise_wrappers.promisify(new SinkStream(options));
-}
-
-function nullSinkStream(options) {
-  return promise_wrappers.promisify(new NullSinkStream(options));
-}
-
-function sourceStream(buffer, options) {
-  return promise_wrappers.promisify(new SourceStream(buffer, options));
+export function sourceStream(buffer, inOptions) {
+  const options = {
+    name: "sourceStream",
+    read: () => {
+      rv.push(buffer);
+      rv.push(null);
+    }
+  };
+  for (const k in inOptions) options[k] = inOptions[k];
+  const rv = promisify(new stream.Readable(options), options);
+  return rv;
 }
 
 // shortcut for creating a SourceStream and piping it to a writable.
-function pipeFromBuffer(buffer, writable, options) {
+export function pipeFromBuffer(buffer, writable, options) {
   const source = sourceStream(buffer);
   source.pipe(writable, options);
   return source.endPromise();
 }
 
 // shortcut for creating a SinkStream and piping a readable into it.
-function pipeToBuffer(readable, options) {
+export function pipeToBuffer(readable, options) {
   const sink = sinkStream();
   readable.pipe(sink, options);
   return sink.finishPromise().then(() => sink.getBuffer());
 }
-
-
-exports.nullSinkStream = nullSinkStream;
-exports.pipeFromBuffer = pipeFromBuffer;
-exports.pipeToBuffer = pipeToBuffer;
-exports.sinkStream = sinkStream;
-exports.sourceStream = sourceStream;
