@@ -1,6 +1,7 @@
 "use strict";
 
 import {
+  bufferStream,
   nullSinkStream,
   pipeFromBuffer,
   pipeToBuffer,
@@ -16,6 +17,7 @@ import Transform from "./stream-toolkit/transform";
 import { inject, weld } from "./stream-toolkit/weld";
 
 export {
+  bufferStream,
   compoundStream,
   countingStream,
   inject,
