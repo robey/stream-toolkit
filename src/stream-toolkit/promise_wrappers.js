@@ -66,7 +66,13 @@ function untilPromise(stream, f) {
 
 let counter = 0;
 
-// add promise-based methods to a stream
+/*
+ * add promise-based methods to a stream.
+ * options:
+ *   - `name`: to use for logging, when debug logging is active
+ * no option names will conflict with node.js stream options, so you can use
+ * the same options object in a pinch.
+ */
 function promisify(stream, options = {}) {
   // only bother to add the methods once. :)
   if (stream.endPromise) return stream;
