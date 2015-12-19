@@ -14,11 +14,12 @@
     "url": "git://github.com/robey/stream-toolkit.git"
   },
   "scripts": {
-    "build": "npm run prepublish",
+    "build": "babel --source-maps --out-dir lib src",
+    "build-test": "babel --source-maps --out-dir test/lib test/src",
     "clean": "rm -rf lib test/lib",
     "distclean": "npm run clean && rm -rf node_modules",
-    "prepublish": "babel --source-maps --out-dir lib src && babel --source-maps --out-dir test/lib test/src",
-    "test": "mocha -R spec --colors test/lib"
+    "prepublish": "npm run build",
+    "test": "npm run build && npm run build-test && mocha -R spec --colors test/lib"
   },
   "dependencies": {
     "bluebird": "*"
