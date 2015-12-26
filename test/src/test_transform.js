@@ -406,16 +406,16 @@ describe("Transform", () => {
 
     return Promise.all(Promise.map(objects, obj => {
       jp.write(JSON.stringify(obj));
-      return Promise.delay(1).then(() => {
+      return Promise.delay(5).then(() => {
         jp.read().should.eql(obj);
       });
     }, { concurrency: 1 })).then(() => {
       jp.end();
-      return Promise.delay(1);
+      return Promise.delay(5);
     }).then(() => {
       // read one more time to get the 'end' event
       jp.read();
-      return Promise.delay(1);
+      return Promise.delay(5);
     }).then(() => {
       ended.should.eql(true);
     });
