@@ -15,7 +15,7 @@ function handleOneShots(obj, handlers) {
 
   events.forEach(event => {
     const f = handlers[event];
-    wrappedHandlers[event] = (...x) => {
+    wrappedHandlers[event] = function oneshot(...x) {
       if (obj.__log) obj.__log("received event: " + event);
       removeWrappedHandlers();
       return f(...x);
@@ -87,7 +87,10 @@ function promisify(stream, options = {}) {
     } else {
       stream.__name = "[stream " + stream.__id + "]";
     }
-    stream.__log = (message) => debugLogger(stream.__name + " " + message);
+    stream.__log = message => {
+      if (typeof message == "function") message = message();
+      debugLogger(stream.__name + " " + message);
+    };
     stream.__debug = true;
     stream.__log("promisify.");
   }
@@ -99,6 +102,21 @@ function promisify(stream, options = {}) {
       stream.__log("<- end!");
       return Promise.resolve();
     }
+
+    /*
+     * node will often not send the "end" event to a stream unless someone
+     * has tried to `read` since the stream was closed. this can cause a race
+     * for framed streams (streams that have a defined length) because the
+     * reader may "know" the stream is over before node does, and stop
+     * reading. anyone syncing on the "end" event will then wait forever.
+     * SO: if a stream becomes readable while we're waiting for "end", and
+     * we can see that the stream is actually ending, send a bogus read to
+     * trip the machinery to get our precious "end" event.
+     */
+    stream.on("readable", () => {
+      if (stream._readableState.ended && !stream._readableState.endEmitted) stream.read(0);
+    });
+
     return untilPromise(stream, (resolve, reject, onEvent) => {
       onEvent(stream, "error", reject);
       onEvent(stream, "end", resolve);
@@ -129,6 +147,7 @@ function promisify(stream, options = {}) {
       }
       return Promise.resolve(rv);
     }
+
     // if the stream is closed, we won't get another "end" event, so check the stream's state.
     // node 10 uses "endEmitted"; io.js uses "ended".
     if (stream._readableState && (stream._readableState.endEmitted || stream._readableState.ended)) {
@@ -136,13 +155,13 @@ function promisify(stream, options = {}) {
       return Promise.resolve(rv);
     }
 
-    const deferred = Promise.defer();
-    handleOneShots(stream, {
-      readable: () => deferred.resolve(stream.readPromise(count)),
-      error: (error) => deferred.reject(error),
-      end: () => deferred.resolve(null)
+    return new Promise((resolve, reject) => {
+      handleOneShots(stream, {
+        readable: () => resolve(stream.readPromise(count)),
+        error: error => reject(error),
+        end: () => resolve(null)
+      });
     });
-    return deferred.promise;
   };
 
   // turn stream.write(data) into a function that returns a promise.

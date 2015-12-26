@@ -31,7 +31,7 @@ const STOPPED = 1;
  * directly, just like a normal Transform.
  *
  * To pull data from the incoming buffer, call:
- * - `get(count): Promise`
+ *   - `get(count): Promise`
  *
  * The PullTransform object is passed to `transform` to make it easier to
  * call `get` on it.
@@ -61,9 +61,9 @@ const STOPPED = 1;
 export default class PullTransform extends Duplex {
   /*
    * options:
-   * - transform: `(PullTransform) => Promise()`
-   * - readableObjectMode (from Duplex)
-   * - writableObjectMode (from Duplex)
+   *   - transform: `PullTransform => Promise`
+   *   - readableObjectMode (from Duplex)
+   *   - writableObjectMode (from Duplex)
    */
   constructor(options = {}) {
     super(options);
@@ -72,9 +72,8 @@ export default class PullTransform extends Duplex {
     if (options.parent) this._parent = options.parent;
 
     this._writeObjects = options.writableObjectMode;
-    this._debug = options.debug;
     this._transform = options.transform || (() => {
-      throw new Error("not implemented");
+      throw new Error("no transform function provided");
     });
 
     // assume we can send data until 'highWaterMark', to start with.
@@ -92,7 +91,7 @@ export default class PullTransform extends Duplex {
 
     this.once("prefinish", () => {
       // tell the pump to wrap it up.
-      if (this._debug) console.log(this._debug, "prefinish");
+      this.__log("pull: prefinish");
       this._ended = true;
       if (this._parent) {
         // undo any `_stop` signal from downstream.
@@ -116,7 +115,7 @@ export default class PullTransform extends Duplex {
    * call's Promise completes.
    */
   get(count) {
-    if (this._debug) console.log(this._debug, "get", count, "bufferSize", this._bufferSize);
+    this.__log(() => `pull: get(${count}) bufferSize=${this._bufferSize}`);
     if (this._parent) return this._parent.get(count);
 
     this._getCount = count;
@@ -151,9 +150,13 @@ export default class PullTransform extends Duplex {
    */
   subpipe(other) {
     if (other instanceof PullTransform) {
+      this.__log(() => "pull subpipe: " + other.__name);
       other._parent = this;
       // child's 'end' signal will push a STOP back to us. undo that.
-      other.on("end", () => this._read());
+      other.on("end", () => {
+        this.__log("pull: subpipe end!");
+        this._read();
+      });
       other._next();
       return other;
     }
@@ -162,14 +165,13 @@ export default class PullTransform extends Duplex {
   }
 
   _pump() {
-    if (this._debug) console.log(this._debug, "pump loop");
+    this.__log("pull: pump loop, ended=" + this._ended);
     if (this._ended) {
-      if (this._debug) console.log(this._debug, "goodbye");
       this.push(null);
       return;
     }
     this._transform(this).then(data => {
-      if (this._debug) console.log(this._debug, "transform got", (data instanceof Buffer ? data.length : "*"), data);
+      this.__log(() => "pull: transform got " + debugBuffer(data));
       if (data != null) this.push(data);
       this._pump();
     }, error => {
@@ -179,7 +181,7 @@ export default class PullTransform extends Duplex {
 
   // never called in child mode.
   _write(chunk, encoding, callback) {
-    if (this._debug) console.log(this._debug, "write", (chunk instanceof Buffer ? chunk.length : "*"), chunk);
+    this.__log(() => "pull: write " + debugBuffer(chunk));
     this._buffers.push(chunk);
     this._bufferSize += this._writeObjects ? 1 : chunk.length;
     this._nextCallback = callback;
@@ -187,7 +189,7 @@ export default class PullTransform extends Duplex {
   }
 
   _next() {
-    if (this._debug) console.log(this._debug, "next");
+    this.__log("pull: next");
     if (!this._getResolve) return;
 
     // we get here if the transform was started before we were attached to a subpipe.
@@ -199,7 +201,7 @@ export default class PullTransform extends Duplex {
 
     // do we have enough data to fill a current `get`?
     if (this._getCount > this._bufferSize && !this._ended) {
-      if (this._debug) console.log(this._debug, "wait for moar");
+      this.__log("pull: not enough data; wait for moar");
       // ack the latest write. we want moar! moar!
       if (!this._nextCallback) return;
       const callback = this._nextCallback;
@@ -231,7 +233,7 @@ export default class PullTransform extends Duplex {
   }
 
   _respondToGet(obj) {
-    if (this._debug) console.log(this._debug, "respondToGet", (obj instanceof Buffer ? obj.length : "*"), obj);
+    this.__log(() => "pull: respondToGet " + debugBuffer(obj));
     const resolve = this._getResolve;
     this._getCount = 0;
     this._getResolve = null;
@@ -239,7 +241,7 @@ export default class PullTransform extends Duplex {
   }
 
   _read() {
-    if (this._debug) console.log(this._debug, "read");
+    this.__log("pull: _read called");
     this._state = FLOWING;
     if (this._parent) {
       this._parent._read();
@@ -249,13 +251,13 @@ export default class PullTransform extends Duplex {
   }
 
   _stop() {
-    if (this._debug) console.log(this._debug, "stop");
+    this.__log("pull: stop");
     this._state = STOPPED;
     if (this._parent) this._parent._stop();
   }
 
   push(data) {
-    if (this._debug) console.log(this._debug, "push", data);
+    this.__log(() => "pull: push " + debugBuffer(data));
     if (data == null) {
       this._ended = true;
       if (this._pushedNull) return;
@@ -267,6 +269,19 @@ export default class PullTransform extends Duplex {
     } catch (error) {
       this.emit("error", error);
     }
-    this._stop();
+    if (data != null) this._stop();
   }
+}
+
+
+function debugBuffer(obj) {
+  if (obj == null) return "(null)";
+  if (obj instanceof Buffer) return `Buffer(${obj.length}, ${obj.inspect()})`;
+  if (obj.inspect && typeof obj.inspect == "function") return obj.inspect();
+  return obj.constructor.name;
+}
+
+function debugReadableState(stream) {
+  const state = stream._readableState;
+  return `buffered=${state.length} ended=${state.ended} endEmitted=${state.endEmitted} reading=${state.reading} needReadable=${state.needReadable} emittedReadable=${state.emittedReadable} readable=${stream.readable}`;
 }
