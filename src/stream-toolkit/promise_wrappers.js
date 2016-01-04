@@ -16,7 +16,7 @@ function handleOneShots(obj, handlers) {
   events.forEach(event => {
     const f = handlers[event];
     wrappedHandlers[event] = function oneshot(...x) {
-      if (obj.__log) obj.__log("received event: " + event);
+      if (obj.__log) obj.__log(() => "received event: " + event);
       removeWrappedHandlers();
       return f(...x);
     };
@@ -53,7 +53,7 @@ function untilPromise(stream, f) {
 
   handlers.forEach(({ obj, eventName, handler }) => {
     const h = (...x) => {
-      stream.__log("received event: " + eventName);
+      stream.__log(() => "received event: " + eventName);
       obj.removeListener(eventName, h);
       return handler(...x);
     }
@@ -92,7 +92,6 @@ function promisify(stream, options = {}) {
       debugLogger(stream.__name + " " + message);
     };
     stream.__debug = true;
-    stream.__log("promisify.");
   }
 
   stream.endPromise = () => {
@@ -135,7 +134,7 @@ function promisify(stream, options = {}) {
 
   // turn a stream.read(N) into a function that returns a promise.
   stream.readPromise = (count) => {
-    stream.__log("read(" + count + ")");
+    stream.__log(() => "read(" + count + ")");
     if (count == 0) return Promise.resolve(new Buffer(0));
     const rv = stream.read(count);
     if (rv != null) {

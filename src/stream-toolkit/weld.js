@@ -59,6 +59,6 @@ export function weld(...streams) {
   last.on("end", () => transform.push(null));
 
   const rv = promisify(transform, options);
-  rv.__log("weld " + first.__name + " -> " + last.__name);
+  rv.__log(() => "weld " + first.__name + " -> " + last.__name);
   return rv;
 }

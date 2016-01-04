@@ -165,7 +165,7 @@ export default class PullTransform extends Duplex {
   }
 
   _pump() {
-    this.__log("pull: pump loop, ended=" + this._ended);
+    this.__log(() => "pull: pump loop, ended=" + this._ended);
     if (this._ended) {
       this.push(null);
       return;
