@@ -11,32 +11,35 @@ $ npm test
 
 ## Sources and sinks
 
-- `sourceStream` - create a readable stream from a string or buffer
+- `sourceStream(buffer, options = {})` - Create a readable stream from a string or buffer. Options are passed to the underlying `Readable`.
 
-```javascript
-var toolkit = require("stream-toolkit");
-var source = toolkit.sourceStream("hello sailor!");
-source.pipe(...);
-```
+  ```javascript
+  import { sourceStream } from "stream-toolkit";
+  const source = sourceStream("hello sailor!");
+  source.pipe(...);
+  ```
 
-- `sinkStream` - create a writable stream that fills a buffer
+- `sinkStream(options = {})` - Create a writable stream that fills a buffer. Options are passed to the underlying `Writable`.
 
-```javascript
-var toolkit = require("stream-toolkit");
-var sink = toolkit.sinkStream("hello sailor!");
-stuff.pipe(sink);
-sink.on("finish", function () {
-  var buffer = sink.getBuffer();
-  // ...
-});
-```
+  The returned stream has one extra method for fetching the buffered contents:
+    - `getBuffer()`
 
-- `nullSinkStream` - a `SinkStream` that throws away data as it arrives
+  ```javascript
+  import { sinkStream } from "stream-toolkit";
+  const sink = sinkStream("hello sailor!");
+  stuff.pipe(sink);
+  sink.on("finish", () => {
+    const buffer = sink.getBuffer();
+    // ...
+  });
+  ```
 
-```javascript
-var toolkit = require("stream-toolkit");
-garbage.pipe(toolkit.nullSinkStream());
-```
+- `nullSinkStream` - Create a `SinkStream` that throws away data as it arrives, instead of buffering it.
+
+  ```javascript
+  import { nullSinkStream } from "stream-toolkit";
+  garbage.pipe(nullSinkStream());
+  ```
 
 ## Promise methods
 
@@ -47,9 +50,9 @@ All of the streams provided by stream-toolkit are already promisified.
 - `readPromise` - return a promise that reads data from a readable stream
 
 ```javascript
-var toolkit = require("stream-toolkit");
-toolkit.promisify(stream);
-stream.readPromise(5).then(function (buffer) {
+import { promisify } from "stream-toolkit";
+promisify(stream);
+stream.readPromise(5).then(buffer => {
   // 'buffer' contains the 5 bytes
 });
 ```
@@ -57,9 +60,9 @@ stream.readPromise(5).then(function (buffer) {
 - `writePromise` - return a promise that data has been accepted downsteam (the "write" callback has been called)
 
 ```javascript
-var toolkit = require("stream-toolkit");
-toolkit.promisify(stream);
-stream.writePromise(new Buffer("data")).then(function () {
+import { promisify } from "stream-toolkit";
+promisify(stream);
+stream.writePromise(new Buffer("data")).then(() => {
   // "data" has been accepted downstream
 });
 ```
@@ -67,9 +70,9 @@ stream.writePromise(new Buffer("data")).then(function () {
 - `endPromise` - return a promise that a readable stream has ended
 
 ```javascript
-var toolkit = require("stream-toolkit");
-toolkit.promisify(stream);
-stream.endPromise().then(function () {
+import { promisify } from "stream-toolkit";
+promisify(stream);
+stream.endPromise().then(() => {
   // stream is ended
 });
 ```
@@ -77,9 +80,9 @@ stream.endPromise().then(function () {
 - `finishPromise` - return a promise that a writable stream has finished
 
 ```javascript
-var toolkit = require("stream-toolkit");
-toolkit.promisify(stream);
-stream.finishPromise().then(function () {
+import { promisify } from "stream-toolkit";
+promisify(stream);
+stream.finishPromise().then(() => {
   // stream is finished
 });
 ```
@@ -87,8 +90,8 @@ stream.finishPromise().then(function () {
 - `pipeFromBuffer` - shortcut for creating a `SourceStream`, piping it into another stream, and calling `endPromise`
 
 ```javascript
-var toolkit = require("stream-toolkit");
-toolkit.pipeFromBuffer("data", stream).then(function () {
+import { pipeFromBuffer } from "stream-toolkit";
+pipeFromBuffer("data", stream).then(() => {
   // stream has processed all of "data"
 });
 ```

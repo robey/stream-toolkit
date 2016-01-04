@@ -6,21 +6,21 @@ import { promisify } from "./promise_wrappers";
 
 /*
  * The transformer can be in two states:
- * - flowing - output spigot is open, waiting for more incoming data: `_read`
- *   was called, and all `push` calls have returned true
- * - stopped - waiting for permission in the form of a `_read` call: `_write`
- *   may have been called, but we're buffering it for now
+ *   - flowing - output spigot is open, waiting for more incoming data:
+ *     `_read` was called, and all `push` calls have returned true
+ *   - stopped - waiting for permission in the form of a `_read` call:
+ *     `_write` may have been called, but we're buffering it for now
  */
 const FLOWING = 0;
 const STOPPED = 1;
 
 /*
  * Transform from the nodejs "stream" library, with the following changes:
- * - simplified implementation using ES6
- * - `transform` and `flush` functions must be passed in options (not
- *   overridden)
- * - `transform` and `flush` functions return a Promise instead of calling a
- *   callback
+ *   - simplified implementation using ES6
+ *   - `transform` and `flush` functions must be passed in options (not
+ *     overridden)
+ *   - `transform` and `flush` functions return a Promise instead of calling a
+ *     callback
  *
  * The last point has the side effect of running pending buffer operations
  * on the next event loop tick instead of immediately. This may be considered
@@ -29,8 +29,8 @@ const STOPPED = 1;
 export default class Transform extends Duplex {
   /*
    * options:
-   * - transform: `(Buffer) => Promise(Buffer)`
-   * - flush: `() => Promise()`
+   *   - transform: `(Buffer) => Promise(Buffer)`
+   *   - flush: `() => Promise()`
    */
   constructor(options = {}) {
     super(options);
