@@ -1,9 +1,10 @@
-const Promise = require("bluebird");
-const util = require("util");
+"use strict";
+
+import Promise from "bluebird";
 
 var debugLogger = null;
 
-function setDebugLogger(logger) {
+export function setDebugLogger(logger) {
   debugLogger = logger;
 }
 
@@ -16,7 +17,6 @@ function handleOneShots(obj, handlers) {
   events.forEach(event => {
     const f = handlers[event];
     wrappedHandlers[event] = function oneshot(...x) {
-      if (obj.__log) obj.__log(() => "received event: " + event);
       removeWrappedHandlers();
       return f(...x);
     };
@@ -73,7 +73,7 @@ let counter = 0;
  * no option names will conflict with node.js stream options, so you can use
  * the same options object in a pinch.
  */
-function promisify(stream, options = {}) {
+export function promisify(stream, options = {}) {
   // only bother to add the methods once. :)
   if (stream.endPromise) return stream;
 
@@ -172,7 +172,3 @@ function promisify(stream, options = {}) {
 
   return stream;
 }
-
-
-exports.promisify = promisify;
-exports.setDebugLogger = setDebugLogger;
