@@ -19,7 +19,7 @@ import { promisify } from "./promise_wrappers";
  * which will apply to the new, welded stream, if present. (if the final
  * parameter doesn't contain either field, we assume it's a stream.)
  */
-export function weld(...streams) {
+export default function weld(...streams) {
   const inOptions = streams[streams.length - 1];
   let total = streams.length;
   const options = {};

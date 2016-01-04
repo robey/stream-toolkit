@@ -14,13 +14,12 @@ import limitStream from "./stream-toolkit/limit_stream";
 import { promisify, setDebugLogger } from "./stream-toolkit/promise_wrappers";
 import PullTransform from "./stream-toolkit/pull_transform";
 import Transform from "./stream-toolkit/transform";
-import { inject, weld } from "./stream-toolkit/weld";
+import weld from "./stream-toolkit/weld";
 
 export {
   bufferStream,
   compoundStream,
   countingStream,
-  inject,
   limitStream,
   nullSinkStream,
   pipeFromBuffer,
