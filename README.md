@@ -21,9 +21,6 @@ $ npm test
 
 - `sinkStream(options = {})` - Create a writable stream that fills a buffer. Options are passed to the underlying `Writable`.
 
-  The returned stream has one extra method for fetching the buffered contents:
-    - `getBuffer()`
-
   ```javascript
   import { sinkStream } from "stream-toolkit";
   const sink = sinkStream("hello sailor!");
@@ -33,6 +30,9 @@ $ npm test
     // ...
   });
   ```
+
+  The returned stream has one extra method for fetching the buffered contents:
+    - `getBuffer()`
 
 - `nullSinkStream` - Create a `SinkStream` that throws away data as it arrives, instead of buffering it.
 
@@ -47,63 +47,63 @@ $ npm test
 
 All of the streams provided by stream-toolkit are already promisified.
 
-- `readPromise` - return a promise that reads data from a readable stream
+- `readPromise(length)` - Return a promise for `read(length)`. The promise will either resolve with exactly the requested number of bytes, or reject on error.
 
-```javascript
-import { promisify } from "stream-toolkit";
-promisify(stream);
-stream.readPromise(5).then(buffer => {
-  // 'buffer' contains the 5 bytes
-});
-```
+  ```javascript
+  import { promisify } from "stream-toolkit";
+  promisify(stream);
+  stream.readPromise(5).then(buffer => {
+    // 'buffer' contains the 5 bytes
+  });
+  ```
 
-- `writePromise` - return a promise that data has been accepted downsteam (the "write" callback has been called)
+- `writePromise(buffer)` - Return a promise for `write(buffer)`. The promise will resolve once data has been accepted downsteam (the "write" callback has been called), or reject on error.
 
-```javascript
-import { promisify } from "stream-toolkit";
-promisify(stream);
-stream.writePromise(new Buffer("data")).then(() => {
-  // "data" has been accepted downstream
-});
-```
+  ```javascript
+  import { promisify } from "stream-toolkit";
+  promisify(stream);
+  stream.writePromise(new Buffer("data")).then(() => {
+    // "data" has been accepted downstream
+  });
+  ```
 
-- `endPromise` - return a promise that a readable stream has ended
+- `endPromise()` - Return a promise that a readable stream has ended. If the stream has already ended, it will resolve immediately. Otherwise, it will resolve when the "end" event is received.
 
-```javascript
-import { promisify } from "stream-toolkit";
-promisify(stream);
-stream.endPromise().then(() => {
-  // stream is ended
-});
-```
+  ```javascript
+  import { promisify } from "stream-toolkit";
+  promisify(stream);
+  stream.endPromise().then(() => {
+    // stream is ended
+  });
+  ```
 
-- `finishPromise` - return a promise that a writable stream has finished
+- `finishPromise()` - Return a promise that a writable stream has finished. If the stream has already finished, it will resolve immediately. Otherwise, it will resolve when the "finish" event is received.
 
-```javascript
-import { promisify } from "stream-toolkit";
-promisify(stream);
-stream.finishPromise().then(() => {
-  // stream is finished
-});
-```
+  ```javascript
+  import { promisify } from "stream-toolkit";
+  promisify(stream);
+  stream.finishPromise().then(() => {
+    // stream is finished
+  });
+  ```
 
-- `pipeFromBuffer` - shortcut for creating a `SourceStream`, piping it into another stream, and calling `endPromise`
+- `pipeFromBuffer(buffer, writable, options = {})` - Create a `SourceStream` from a buffer, pipe that into a writable stream, and return `endPromise()` on the source.
 
-```javascript
-import { pipeFromBuffer } from "stream-toolkit";
-pipeFromBuffer("data", stream).then(() => {
-  // stream has processed all of "data"
-});
-```
+  ```javascript
+  import { pipeFromBuffer } from "stream-toolkit";
+  pipeFromBuffer("data", stream).then(() => {
+    // stream has processed all of "data"
+  });
+  ```
 
-- `pipeToBuffer` - shortcut for creating a `SinkStream`, piping a stream into it, and calling `finishPromise`
+- `pipeToBuffer(readable, options = {})` - Create a `SinkStream`, pipe a readable stream into it, and return a promise for the sink buffer. The promise resolves after the readable is completely drained.
 
-```javascript
-var toolkit = require("stream-toolkit");
-toolkit.pipeToBuffer(stream).then(function (buffer) {
-  // 'buffer' contains all of stream, and stream has ended.
-});
-```
+  ```javascript
+  import { pipeToBuffer } from "stream-toolkit";
+  toolkit.pipeToBuffer(stream).then(buffer => {
+    // 'buffer' contains all of stream, and stream has ended.
+  });
+  ```
 
 ## Fancy streams
 
