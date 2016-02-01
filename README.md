@@ -9,6 +9,35 @@ $ npm install
 $ npm test
 ```
 
+## API Contents
+
+- [Sources and sinks](#sources-and-sinks)
+  - `sourceStream`
+  - `sinkStream`
+  - `nullSinkStream`
+- [Promise methods](#promise-methods)
+  - `promisify`
+    - `readPromise`
+    - `writePromise`
+    - `endPromise`
+    - `finishPromise`
+    - `pipeFromBuffer`
+    - `pipeToBuffer`
+
+  bufferStream,
+  compoundStream,
+  countingStream,
+  limitStream,
+  PullTransform,
+  setDebugLogger,
+  Transform,
+  weld
+
+- [Building blocks]
+  - `Transform`
+  - `PullTransform`
+
+
 ## Sources and sinks
 
 - `sourceStream(buffer, options = {})` - Create a readable stream from a string or buffer. Options are passed to the underlying `Readable`.
