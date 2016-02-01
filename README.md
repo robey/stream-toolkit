@@ -40,28 +40,32 @@ $ npm test
 
 ## Sources and sinks
 
-- `sourceStream(buffer, options = {})` - Create a readable stream from a string or buffer. Options are passed to the underlying `Readable`.
+### `sourceStream(buffer, options = {})`
 
-  ```javascript
-  import { sourceStream } from "stream-toolkit";
-  const source = sourceStream("hello sailor!");
-  source.pipe(...);
-  ```
+Create a readable stream from a string or buffer. Options are passed to the underlying `Readable`.
 
-- `sinkStream(options = {})` - Create a writable stream that fills a buffer. Options are passed to the underlying `Writable`.
+```javascript
+import { sourceStream } from "stream-toolkit";
+const source = sourceStream("hello sailor!");
+source.pipe(...);
+```
 
-  ```javascript
-  import { sinkStream } from "stream-toolkit";
-  const sink = sinkStream("hello sailor!");
-  stuff.pipe(sink);
-  sink.on("finish", () => {
-    const buffer = sink.getBuffer();
-    // ...
-  });
-  ```
+### `sinkStream(options = {})`
 
-  The returned stream has one extra method for fetching the buffered contents:
-    - `getBuffer()`
+Create a writable stream that fills a buffer. Options are passed to the underlying `Writable`.
+
+```javascript
+import { sinkStream } from "stream-toolkit";
+const sink = sinkStream("hello sailor!");
+stuff.pipe(sink);
+sink.on("finish", () => {
+  const buffer = sink.getBuffer();
+  // ...
+});
+```
+
+The returned stream has one extra method for fetching the buffered contents:
+  - `getBuffer()`
 
 - `nullSinkStream` - Create a `SinkStream` that throws away data as it arrives, instead of buffering it.
 
