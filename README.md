@@ -40,7 +40,7 @@ $ npm test
 
 ## Sources and sinks
 
-### `sourceStream(buffer, options = {})`
+### sourceStream(buffer, options = {})
 
 Create a readable stream from a string or buffer. Options are passed to the underlying `Readable`.
 
