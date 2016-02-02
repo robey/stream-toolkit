@@ -23,8 +23,9 @@ $ npm test
     - `finishPromise`
     - `pipeFromBuffer`
     - `pipeToBuffer`
+- [Transforms](#transforms)
+  - `bufferStream`
 
-  bufferStream,
   compoundStream,
   countingStream,
   limitStream,
@@ -50,7 +51,7 @@ const source = sourceStream("hello sailor!");
 source.pipe(...);
 ```
 
-### `sinkStream(options = {})`
+### sinkStream(options = {})
 
 Create a writable stream that fills a buffer. Options are passed to the underlying `Writable`.
 
@@ -65,14 +66,17 @@ sink.on("finish", () => {
 ```
 
 The returned stream has one extra method for fetching the buffered contents:
-  - `getBuffer()`
+  - `getBuffer(): Buffer`
 
-- `nullSinkStream` - Create a `SinkStream` that throws away data as it arrives, instead of buffering it.
+### nullSinkStream(options = {})
 
-  ```javascript
-  import { nullSinkStream } from "stream-toolkit";
-  garbage.pipe(nullSinkStream());
-  ```
+Create a `SinkStream` that throws away data as it arrives, instead of buffering it.
+
+```javascript
+import { nullSinkStream } from "stream-toolkit";
+garbage.pipe(nullSinkStream());
+```
+
 
 ## Promise methods
 
@@ -80,63 +84,104 @@ The returned stream has one extra method for fetching the buffered contents:
 
 All of the streams provided by stream-toolkit are already promisified.
 
-- `readPromise(length)` - Return a promise for `read(length)`. The promise will either resolve with exactly the requested number of bytes, or reject on error.
+### readPromise(length)
 
-  ```javascript
-  import { promisify } from "stream-toolkit";
-  promisify(stream);
-  stream.readPromise(5).then(buffer => {
-    // 'buffer' contains the 5 bytes
-  });
-  ```
+Return a promise for `read(length)`. The promise will either resolve with exactly the requested number of bytes, or reject on error.
 
-- `writePromise(buffer)` - Return a promise for `write(buffer)`. The promise will resolve once data has been accepted downsteam (the "write" callback has been called), or reject on error.
+```javascript
+import { promisify } from "stream-toolkit";
+promisify(stream);
+stream.readPromise(5).then(buffer => {
+  // 'buffer' contains the 5 bytes
+});
+```
 
-  ```javascript
-  import { promisify } from "stream-toolkit";
-  promisify(stream);
-  stream.writePromise(new Buffer("data")).then(() => {
-    // "data" has been accepted downstream
-  });
-  ```
+### writePromise(buffer)
 
-- `endPromise()` - Return a promise that a readable stream has ended. If the stream has already ended, it will resolve immediately. Otherwise, it will resolve when the "end" event is received.
+Return a promise for `write(buffer)`. The promise will resolve once data has been accepted downsteam (the "write" callback has been called), or reject on error.
 
-  ```javascript
-  import { promisify } from "stream-toolkit";
-  promisify(stream);
-  stream.endPromise().then(() => {
-    // stream is ended
-  });
-  ```
+```javascript
+import { promisify } from "stream-toolkit";
+promisify(stream);
+stream.writePromise(new Buffer("data")).then(() => {
+  // "data" has been accepted downstream
+});
+```
 
-- `finishPromise()` - Return a promise that a writable stream has finished. If the stream has already finished, it will resolve immediately. Otherwise, it will resolve when the "finish" event is received.
+### endPromise()
 
-  ```javascript
-  import { promisify } from "stream-toolkit";
-  promisify(stream);
-  stream.finishPromise().then(() => {
-    // stream is finished
-  });
-  ```
+Return a promise that a readable stream has ended. If the stream has already ended, it will resolve immediately. Otherwise, it will resolve when the "end" event is received.
 
-- `pipeFromBuffer(buffer, writable, options = {})` - Create a `SourceStream` from a buffer, pipe that into a writable stream, and return `endPromise()` on the source.
+```javascript
+import { promisify } from "stream-toolkit";
+promisify(stream);
+stream.endPromise().then(() => {
+  // stream is ended
+});
+```
 
-  ```javascript
-  import { pipeFromBuffer } from "stream-toolkit";
-  pipeFromBuffer("data", stream).then(() => {
-    // stream has processed all of "data"
-  });
-  ```
+### finishPromise()
 
-- `pipeToBuffer(readable, options = {})` - Create a `SinkStream`, pipe a readable stream into it, and return a promise for the sink buffer. The promise resolves after the readable is completely drained.
+Return a promise that a writable stream has finished. If the stream has already finished, it will resolve immediately. Otherwise, it will resolve when the "finish" event is received.
 
-  ```javascript
-  import { pipeToBuffer } from "stream-toolkit";
-  toolkit.pipeToBuffer(stream).then(buffer => {
-    // 'buffer' contains all of stream, and stream has ended.
-  });
-  ```
+```javascript
+import { promisify } from "stream-toolkit";
+promisify(stream);
+stream.finishPromise().then(() => {
+  // stream is finished
+});
+```
+
+### pipeFromBuffer(buffer, writable, options = {})
+
+Create a `SourceStream` from a buffer, pipe that into a writable stream, and return `endPromise()` on the source.
+
+```javascript
+import { pipeFromBuffer } from "stream-toolkit";
+pipeFromBuffer("data", stream).then(() => {
+  // stream has processed all of "data"
+});
+```
+
+### pipeToBuffer(readable, options = {})
+
+Create a `SinkStream`, pipe a readable stream into it, and return a promise for the sink buffer. The promise resolves after the readable is completely drained.
+
+```javascript
+import { pipeToBuffer } from "stream-toolkit";
+pipeToBuffer(stream).then(buffer => {
+  // 'buffer' contains all of stream, and stream has ended.
+});
+```
+
+
+## Transforms
+
+### bufferStream(options = {})
+
+Buffer incoming data until it reaches a desired block size, then pass it downstream. If `exact` is set, downstream writes will be _exactly_ the desired block size until the stream ends. In either case, when a stream ends, the final write may contain a "short" block if there isn't enough data left.
+
+Options:
+  - `blockSize`: how many bytes to buffer (default: 1048576, or 1MB)
+  - `exact`: (boolean) never send more than `blockSize` at a time
+
+```javascript
+import { bufferStream } from "stream-toolkit";
+const counter = new stream.Transform({
+  transform: (buffer, _, callback) => {
+    console.log(buffer.length);
+    callback();
+  }
+});
+const buffering = bufferStream({ blockSize: 1024, exact: true });
+fs.createReadStream("README.md").pipe(buffering).pipe(counter);
+// 1024, 1024, 1024, ..., 811
+```
+
+
+
+
+
 
 ## Fancy streams
 
