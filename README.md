@@ -17,21 +17,21 @@ $ npm test
   - `nullSinkStream`
 - [Promise methods](#promise-methods)
   - `promisify`
-    - `readPromise`
-    - `writePromise`
-    - `endPromise`
-    - `finishPromise`
-    - `pipeFromBuffer`
-    - `pipeToBuffer`
+  - `readPromise`
+  - `writePromise`
+  - `endPromise`
+  - `finishPromise`
+  - `pipeFromBuffer`
+  - `pipeToBuffer`
+  - `setDebugLogger`
 - [Transforms](#transforms)
   - `bufferStream`
+  - `compoundStream`
 
   compoundStream,
   countingStream,
   limitStream,
-  PullTransform,
   setDebugLogger,
-  Transform,
   weld
 
 - [Building blocks]
@@ -154,6 +154,17 @@ pipeToBuffer(stream).then(buffer => {
 });
 ```
 
+### setDebugLogger(logger)
+
+Set a log function for recording detailed traces of buffers moving through promisified streams. This can be useful when debugging thorny stream synchronization problems, to see exactly where the data goes (or gets lost).
+
+The logger must be a function that takes a string argument: the text to be logged.
+
+```javascript
+import { setDebugLogger } from "stream-toolkit";
+setDebugLogger(text => console.log(text));
+```
+
 
 ## Transforms
 
@@ -178,29 +189,26 @@ fs.createReadStream("README.md").pipe(buffering).pipe(counter);
 // 1024, 1024, 1024, ..., 811
 ```
 
+### compoundStream(options = {})
 
+Create a Readable stream composed from a series of smaller streams. This is a sort of meta-transform that accepts streams on the input (write side), and emits their contents as a single stream, packed end to end, on the output (read side). Any options are passed to `promisify`.
+
+That is, you write stream objects into it, and their contents come out the other side as buffers.
+
+```javascript
+import { compoundStream } from "stream-toolkit";
+const compound = compoundStream();
+const source = sourceStream(new Buffer("hello"));
+compound.write(source);
+compound.end();
+compound.read();  // "hello"
+```
 
 
 
 
 ## Fancy streams
 
-- `compoundStream` - create a readable stream composed of a series of other streams
-
-`compoundStream` takes a set of component streams and concatenates them together into one single continuous stream. The constructor takes a generator function. The function is called initially to provide the first stream; when that stream ends, the generator is called again to provide the next stream. When there are no more component streams, the generator should return `null` and the `CompoundStream` itself will end.
-
-The generator function may return a *promise* for a stream instead of a stream. That's fine.
-
-The generator function may be an array of streams if you don't need to generate them on the fly.
-
-```javascript
-var toolkit = require("stream-toolkit");
-var source1 = toolkit.sourceStream("hello ");
-var source2 = toolkit.sourceStream("sailor");
-var source3 = toolkit.sourceStream("!");
-var compound = toolkit.compoundStream([ source1, source2, source3 ]);
-compound.pipe(...);
-```
 
 - `limitStream` - wrap a readable stream to enforce a length limit
 
