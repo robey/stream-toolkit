@@ -70,7 +70,7 @@ class CompoundStream extends Duplex {
 }
 
 
-export default function compoundStream(generator, options = {}) {
+export default function compoundStream(options = {}) {
   if (!options.name) options.name = "CompoundStream";
-  return promisify(new CompoundStream(generator), options);
+  return promisify(new CompoundStream(options), options);
 }
